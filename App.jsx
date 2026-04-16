@@ -10,7 +10,7 @@ const SUPERVISORS = ["Arun", "Asim", "Botan", "Alkan", "Serkan", "Supervisor01",
 const AREAS       = ["North-A", "North-B", "SLC", "South"];
 const DEFAULT_PASSWORDS = { Arun:"arun01", Asim:"asim01", Botan:"botan01", Alkan:"alkan01", Serkan:"643844", Supervisor01:"sup0101", Supervisor02:"sup0201", Supervisor03:"sup0301" };
 
-const GAS_URL  = "https://script.google.com/macros/s/AKfycbx9wXY83a2q-mMOe7wOCI4trDsrBwux9mT1TLVCJALqNjW3fh0-N8ZIRx7JQeSi2uUi/exec";
+const GAS_URL  = "https://script.google.com/macros/s/AKfycbwbgUUgOpOSf7cHaiVOjjk5K8O8czC9SjGXT0j0N1ed65xdDAf5LNbalHGt73ZRrQeD/exec";
 
 // Clean short ID: e.g. "R-20260416-A3F2"
 function makeId(prefix="R") {
