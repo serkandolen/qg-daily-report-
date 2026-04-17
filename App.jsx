@@ -6,11 +6,13 @@ const USERS_KEY    = "qg_users_v8";
 const CHAT_KEY     = "qg_chat_v8";
 const TARGETS_KEY  = "qg_targets_v8";
 const ADMIN_USER  = "Serkan";
+const GUEST_USER  = "Guest";
 const SUPERVISORS = ["Arun", "Asim", "Botan", "Alkan", "Serkan", "Supervisor01", "Supervisor02", "Supervisor03"];
+const ALL_USERS   = [...SUPERVISORS, GUEST_USER];
 const AREAS       = ["North-A", "North-B", "SLC", "South"];
-const DEFAULT_PASSWORDS = { Arun:"arun01", Asim:"asim01", Botan:"botan01", Alkan:"alkan01", Serkan:"643844", Supervisor01:"sup0101", Supervisor02:"sup0201", Supervisor03:"sup0301" };
+const DEFAULT_PASSWORDS = { Arun:"arun01", Asim:"asim01", Botan:"botan01", Alkan:"alkan01", Serkan:"643844", Supervisor01:"sup0101", Supervisor02:"sup0201", Supervisor03:"sup0301", Guest:"guest01" };
 
-const GAS_URL  = "https://script.google.com/macros/s/AKfycbwbgUUgOpOSf7cHaiVOjjk5K8O8czC9SjGXT0j0N1ed65xdDAf5LNbalHGt73ZRrQeD/exec";
+const GAS_URL  = "https://script.google.com/macros/s/AKfycbwMu8pzZrJ2zTQcf4qa8Iewdeh_XTcHMAfsyUeZMrAI1NCsBmU9lhK_eaaLRhBJh4nX/exec";
 
 // Clean short ID: e.g. "R-20260416-A3F2"
 function makeId(prefix="R") {
@@ -56,10 +58,12 @@ async function sget(key) {
   try {
     const data = await gasCall({ action:"get", tab: TAB_MAP[key] });
     if (key === USERS_KEY) {
-      if (!Array.isArray(data) || !data.length) return DEFAULT_PASSWORDS;
-      const obj = {};
-      data.forEach(r => { if (r.name) obj[r.name] = r.password; });
-      return obj;
+      // Start with defaults, override with sheet values
+      const merged = { ...DEFAULT_PASSWORDS };
+      if (Array.isArray(data) && data.length) {
+        data.forEach(r => { if (r.name) merged[r.name] = r.password; });
+      }
+      return merged;
     }
     return Array.isArray(data) ? data : [];
   } catch { return null; }
@@ -85,7 +89,11 @@ async function sset(key, data) {
   } catch(e) { console.error("sset error:", e); }
 }
 
-async function supdateStatus(id, status, resolvedAt) {
+async function sdelete(key, id) {
+  try {
+    await gasCall({ action:"delete", tab: TAB_MAP[key], id });
+  } catch(e) { console.error("delete error:", e); }
+}
   try {
     await gasCall({ action:"update_status", tab:"Engineering", id, status, resolvedAt: resolvedAt||"" });
   } catch(e) { console.error("status error:", e); }
@@ -362,10 +370,13 @@ export default function App() {
     if (!users) { setLoginErr("Loading..."); return; }
     if (users[loginName]===loginPw) {
       const isAdmin = loginName===ADMIN_USER;
-      setSession({ name:loginName, isAdmin });
+      const isGuest = loginName===GUEST_USER;
+      setSession({ name:loginName, isAdmin, isGuest });
       setLoginErr("");
       setForm(emptyForm(loginName));
       setTargetForm(emptyTarget(loginName));
+      // Guest goes straight to summary
+      if (isGuest) setTab("summary");
     } else { setLoginErr("❌ Incorrect password."); setLoginPw(""); }
   };
 
@@ -393,6 +404,10 @@ export default function App() {
     const { date, supervisor, area, subArea, welder, pipeFitter, jobDescription } = form;
     if (!session?.isAdmin && supervisor !== session?.name) { setAddErr(`You can only submit as ${session?.name}.`); return; }
     if (!date||!supervisor||!area||welder===""||pipeFitter===""||!jobDescription) { setAddErr("Please fill in all required (*) fields."); return; }
+    // Double submit warning — same supervisor+area+subArea+date
+    if (isDuplicate(supervisor, area, subArea, date)) {
+      if (!window.confirm(`⚠️ ${supervisor} already has an entry for ${area}${subArea?` / ${subArea}`:""} on ${date}. Add another?`)) return;
+    }
     setAddErr("");
     setStaged(p=>[...p,{ id:makeId("R"), date, supervisor, area, subArea:subArea||"-", welder:parseInt(welder)||0, pipeFitter:parseInt(pipeFitter)||0, totalManpower:(parseInt(welder)||0)+(parseInt(pipeFitter)||0), jobDescription }]);
     setForm(p=>({...p, area:"", subArea:"", welder:"", pipeFitter:"", jobDescription:""}));
@@ -460,6 +475,19 @@ export default function App() {
     setEngIssues(updated);
     await supdateStatus(id, newStatus, resolvedAt);
   };
+
+  // Delete a report entry (supervisor: own today only; admin: any)
+  const deleteReport = async (id) => {
+    if (!window.confirm("Delete this entry?")) return;
+    setReports(p=>p.filter(r=>r.id!==id));
+    await sdelete(STORAGE_KEY, id);
+    showFlash("🗑 Entry deleted.");
+  };
+
+  // Double submit check — same supervisor+area+subArea+date already submitted?
+  const isDuplicate = (supervisor, area, subArea, date) =>
+    reports.some(r => r.supervisor===supervisor && r.area===area && r.date===date &&
+      (r.subArea||"-")===(subArea||"-"));
 
   const fReports = reports.filter(r=>(fSup==="All"||r.supervisor===fSup)&&(fArea==="All"||r.area===fArea)&&(!fDate||r.date===fDate)).sort((a,b)=>b.date.localeCompare(a.date));
   const fEng = engIssues.filter(r=>(fArea==="All"||r.area===fArea)&&(!fDate||r.date===fDate)&&(engFilter==="all"||(r.status||"open")===engFilter)).sort((a,b)=>b.date.localeCompare(a.date));
@@ -624,7 +652,7 @@ export default function App() {
             <label style={LBL}>Name</label>
             <select value={loginName} onChange={e=>{setLoginName(e.target.value);setLoginErr("");}} style={{ ...inp(),cursor:"pointer" }}>
               <option value="">— Select —</option>
-              {SUPERVISORS.map(s=><option key={s}>{s}</option>)}
+              {ALL_USERS.map(s=><option key={s}>{s}</option>)}
             </select>
           </div>
           <div style={{ marginBottom:22 }}>
@@ -647,11 +675,11 @@ export default function App() {
           <div style={{ fontSize:20, fontWeight:700, letterSpacing:"0.04em" }}>DAILY REPORT</div>
         </div>
         <div style={{ display:"flex", gap:8, flexWrap:"wrap", alignItems:"center" }}>
-          <Tab id="report" label="📝 Report" />
-          <Tab id="target" label="🎯 Target" color="#58a6ff" />
-          <Tab id="engineering" label="⚠️ Engineering" color={C.eng} badge={openCount} />
+          {!session.isGuest && <Tab id="report" label="📝 Report" />}
+          {!session.isGuest && <Tab id="target" label="🎯 Target" color="#58a6ff" />}
+          {!session.isGuest && <Tab id="engineering" label="⚠️ Engineering" color={C.eng} badge={openCount} />}
           <Tab id="summary" label="📊 Summary" />
-          <Tab id="chat" label="💬 Chat" color="#6e40c9" />
+          {!session.isGuest && <Tab id="chat" label="💬 Chat" color="#6e40c9" />}
           {session.isAdmin && <Tab id="records" label="🔒 Records" />}
           <div style={{ marginLeft:8, display:"flex", alignItems:"center", gap:8 }}>
             <Avatar name={session.name} size={28} />
@@ -740,6 +768,35 @@ export default function App() {
               <button onClick={addEntry} style={{ width:"100%",padding:13,background:"transparent",color:C.accent,border:`2px solid ${C.accent}`,borderRadius:6,fontSize:13,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",cursor:"pointer",fontFamily:"'Courier New',monospace",marginBottom:staged.length?10:0 }}>+ Add This Area Entry</button>
               {staged.length>0&&<button onClick={submitAll} style={{ width:"100%",padding:13,background:C.success,color:"#fff",border:"none",borderRadius:6,fontSize:13,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",cursor:"pointer",fontFamily:"'Courier New',monospace" }}>✔ Submit All {staged.length} {staged.length===1?"Entry":"Entries"} to Records</button>}
             </div>
+
+            {/* ── MY TODAY'S SUBMITTED ENTRIES ── */}
+            {(()=>{
+              const myToday = reports.filter(r => r.supervisor===session.name && r.date===todayStr());
+              if (!myToday.length) return null;
+              return (
+                <div style={{ marginTop:22, background:C.surface, border:`1px solid ${C.border}`, borderRadius:10, padding:18 }}>
+                  <div style={{ fontSize:11,fontWeight:700,letterSpacing:"0.12em",color:C.muted,textTransform:"uppercase",marginBottom:14 }}>
+                    📋 My Submitted Entries Today ({myToday.length})
+                  </div>
+                  {myToday.map((r,i)=>(
+                    <div key={r.id} style={{ background:i%2?C.altRow:C.headBg, border:`1px solid ${C.border}`, borderRadius:8, padding:"12px 14px", marginBottom:8, display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12 }}>
+                      <div style={{ flex:1 }}>
+                        <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginBottom:6 }}>
+                          <span style={{ background:C.headBg, border:`1px solid ${C.border}`, borderRadius:4, padding:"2px 8px", fontSize:11, fontWeight:700 }}>{r.area}</span>
+                          {r.subArea&&r.subArea!=="-"&&<span style={{ color:C.muted, fontSize:11 }}>↳ {r.subArea}</span>}
+                          <span style={{ fontSize:11, color:C.accent }}>W:{r.welder} PF:{r.pipeFitter} Total:{r.totalManpower}</span>
+                          <span style={{ fontSize:10, color:C.muted }}>{r.submittedAt}</span>
+                        </div>
+                        <div style={{ fontSize:12, color:C.muted }}>{r.jobDescription}</div>
+                      </div>
+                      <button onClick={()=>deleteReport(r.id)} style={{ background:C.dangerBg, border:`1px solid ${C.danger}`, color:C.danger, borderRadius:6, padding:"5px 12px", cursor:"pointer", fontSize:11, fontWeight:700, fontFamily:"'Courier New',monospace", whiteSpace:"nowrap" }}>
+                        🗑 Delete
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         )}
 
