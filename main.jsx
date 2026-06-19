@@ -19,6 +19,28 @@ import ReactDOM from "react-dom/client";
   style.id = "sfu-css";
   style.textContent = "/* ============================================================\n   SITE FOLLOW-UP — Design System\n   Clean corporate / light theme · mobile-first\n   ============================================================ */\n\n:root{\n  /* Brand */\n  --primary:        #0E4D64;   /* deep petrol blue */\n  --primary-600:    #0A3D50;\n  --primary-700:    #082F3D;\n  --primary-soft:   #E5F0F4;\n  --primary-tint:   #F2F8FA;\n\n  --accent:         #F2870D;   /* safety amber — totals / key data */\n  --accent-soft:    #FDF1E1;\n\n  /* Neutrals */\n  --bg:             #EEF1F5;\n  --surface:        #FFFFFF;\n  --surface-2:      #F5F7FA;\n  --border:         #E4E8EF;\n  --border-strong:  #D2DAE4;\n\n  --text:           #16202E;\n  --text-2:         #5C6B80;\n  --text-3:         #93A1B3;\n\n  /* Status */\n  --success:        #1E8E5A;\n  --success-soft:   #E7F6EE;\n  --danger:         #D14343;\n  --danger-soft:    #FBECEC;\n  --info:           #2B6CB0;\n  --info-soft:      #EAF2FB;\n  --warn:           #C9820B;\n  --warn-soft:      #FCF3E2;\n\n  /* Radius / shadow */\n  --r-xs: 8px;\n  --r-sm: 10px;\n  --r:    14px;\n  --r-lg: 20px;\n  --shadow-sm: 0 1px 2px rgba(16,32,46,.06), 0 1px 3px rgba(16,32,46,.04);\n  --shadow:    0 2px 6px rgba(16,32,46,.06), 0 8px 24px rgba(16,32,46,.06);\n  --shadow-lg: 0 12px 40px rgba(16,32,46,.16);\n\n  --font: \"IBM Plex Sans\", ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif;\n  --nav-h: 64px;\n}\n\n*{ box-sizing:border-box; }\nhtml,body{ margin:0; padding:0; }\nbody{\n  font-family:var(--font);\n  background:#cfd6df;\n  color:var(--text);\n  -webkit-font-smoothing:antialiased;\n  text-rendering:optimizeLegibility;\n}\nbutton{ font-family:inherit; }\ninput,select,textarea{ font-family:inherit; }\n.tnum{ font-variant-numeric:tabular-nums; }\n\n/* ============================================================\n   APP SHELL (real viewport — production)\n   ============================================================ */\nhtml, body, #root{ height:100%; }\nbody{ background:var(--bg); }\n.app{\n  position:fixed; inset:0;\n  display:flex; flex-direction:column;\n  min-height:0; background:var(--bg);\n  max-width:560px; margin:0 auto;\n  box-shadow:0 0 60px rgba(16,32,46,.08);\n}\n.screen{\n  flex:1 1 auto;\n  overflow-y:auto;\n  -webkit-overflow-scrolling:touch;\n  padding:18px 18px calc(var(--nav-h) + 28px);\n}\n.screen::-webkit-scrollbar{ width:0; }\n\n/* App-loading splash */\n.boot{\n  position:fixed; inset:0; display:flex; flex-direction:column;\n  align-items:center; justify-content:center; gap:18px;\n  background:var(--bg); color:var(--text-2);\n}\n.boot .spin{\n  width:38px; height:38px; border-radius:50%;\n  border:3px solid var(--border-strong); border-top-color:var(--primary);\n  animation:spin 0.8s linear infinite;\n}\n@keyframes spin{ to{ transform:rotate(360deg); } }\n\n/* ============================================================\n   TOP BAR\n   ============================================================ */\n.topbar{\n  flex:0 0 auto;\n  background:var(--surface);\n  border-bottom:1px solid var(--border);\n  padding:14px 18px;\n  display:flex; align-items:center; gap:12px;\n}\n.topbar .brand-mark{\n  width:38px; height:38px; border-radius:11px;\n  background:linear-gradient(150deg, var(--primary), var(--primary-700));\n  display:flex; align-items:center; justify-content:center;\n  color:#fff; flex:0 0 auto;\n  box-shadow:inset 0 1px 0 rgba(255,255,255,.18);\n}\n.topbar .t-titles{ display:flex; flex-direction:column; line-height:1.1; min-width:0; }\n.topbar .t-kicker{\n  font-size:9.5px; letter-spacing:.16em; text-transform:uppercase;\n  color:var(--primary); font-weight:700;\n}\n.topbar .t-title{ font-size:16px; font-weight:700; letter-spacing:-.01em; }\n.topbar .t-actions{ margin-left:auto; display:flex; align-items:center; gap:8px; }\n\n.iconbtn{\n  width:40px; height:40px; border-radius:12px;\n  border:1px solid var(--border); background:var(--surface);\n  color:var(--text-2); display:flex; align-items:center; justify-content:center;\n  cursor:pointer; position:relative; transition:.15s;\n}\n.iconbtn:active{ transform:scale(.94); }\n.iconbtn .dot{\n  position:absolute; top:-3px; right:-3px; min-width:18px; height:18px;\n  padding:0 5px; border-radius:9px; background:var(--danger); color:#fff;\n  font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center;\n  border:2px solid var(--surface);\n}\n\n/* ============================================================\n   BOTTOM NAV\n   ============================================================ */\n.bottomnav{\n  position:absolute; left:0; right:0; bottom:0;\n  border-radius:0;\n  height:var(--nav-h);\n  background:rgba(255,255,255,.92);\n  backdrop-filter:blur(12px);\n  border-top:1px solid var(--border);\n  display:flex; align-items:stretch;\n  padding-bottom:env(safe-area-inset-bottom);\n  z-index:20;\n}\n.navitem{\n  flex:1; border:none; background:none; cursor:pointer;\n  display:flex; flex-direction:column; align-items:center; justify-content:center;\n  gap:3px; color:var(--text-3); font-size:10px; font-weight:600;\n  position:relative; transition:.15s; padding-top:6px;\n}\n.navitem .ni-ico{ width:24px; height:24px; display:flex; align-items:center; justify-content:center; }\n.navitem.active{ color:var(--primary); }\n.navitem.active .ni-ico{ transform:translateY(-1px); }\n.navitem .ni-badge{\n  position:absolute; top:4px; left:calc(50% + 6px);\n  min-width:16px; height:16px; padding:0 4px; border-radius:8px;\n  background:var(--danger); color:#fff; font-size:9px; font-weight:700;\n  display:flex; align-items:center; justify-content:center;\n  border:2px solid #fff;\n}\n\n/* ============================================================\n   CARDS / SECTIONS\n   ============================================================ */\n.card{\n  background:var(--surface);\n  border:1px solid var(--border);\n  border-radius:var(--r);\n  box-shadow:var(--shadow-sm);\n}\n.card.pad{ padding:18px; }\n.card + .card{ margin-top:14px; }\n\n.section-head{\n  display:flex; align-items:center; gap:10px; margin-bottom:14px;\n}\n.section-head .bar{ width:4px; height:18px; border-radius:3px; background:var(--primary); }\n.section-head .st{\n  font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;\n  color:var(--text-2);\n}\n.section-head .right{ margin-left:auto; }\n\n.page-title{ font-size:22px; font-weight:700; letter-spacing:-.02em; margin:2px 0 16px; }\n.page-sub{ color:var(--text-2); font-size:13px; margin-top:-12px; margin-bottom:16px; }\n\n/* ============================================================\n   FORM CONTROLS\n   ============================================================ */\n.field{ margin-bottom:15px; }\n.label{\n  display:block; font-size:11px; font-weight:700; letter-spacing:.05em;\n  text-transform:uppercase; color:var(--text-2); margin-bottom:7px;\n}\n.label .req{ color:var(--accent); }\n.input, .select, .textarea{\n  width:100%; padding:13px 14px; min-height:48px;\n  background:var(--surface); border:1.5px solid var(--border-strong);\n  border-radius:var(--r-xs); color:var(--text); font-size:15px;\n  outline:none; transition:.15s; -webkit-appearance:none; appearance:none;\n}\n.textarea{ min-height:auto; resize:vertical; line-height:1.55; }\n.input:focus, .select:focus, .textarea:focus{\n  border-color:var(--primary); box-shadow:0 0 0 4px var(--primary-soft);\n}\n.input::placeholder, .textarea::placeholder{ color:var(--text-3); }\n.select{\n  cursor:pointer;\n  background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235C6B80' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\");\n  background-repeat:no-repeat; background-position:right 13px center; padding-right:40px;\n}\n.grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }\n.grid-3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }\n\n.locked-field{\n  display:flex; align-items:center; gap:10px;\n  padding:11px 14px; min-height:48px;\n  border:1.5px solid var(--primary-soft); border-radius:var(--r-xs);\n  background:var(--primary-tint);\n}\n.locked-field .lk{ margin-left:auto; font-size:10px; color:var(--text-3);\n  display:flex; align-items:center; gap:4px; }\n\n/* Numeric subpanel */\n.subpanel{\n  background:var(--surface-2); border:1px solid var(--border);\n  border-radius:var(--r-sm); padding:15px; margin-bottom:15px;\n}\n.subpanel .sp-title{\n  font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;\n  color:var(--primary); margin-bottom:13px; display:flex; align-items:center; gap:7px;\n}\n.total-box{\n  display:flex; align-items:center; justify-content:center;\n  border:1.5px solid var(--accent); background:var(--accent-soft);\n  border-radius:var(--r-xs); min-height:48px;\n  font-size:26px; font-weight:800; color:var(--accent); font-variant-numeric:tabular-nums;\n}\n\n/* ============================================================\n   BUTTONS\n   ============================================================ */\n.btn{\n  display:inline-flex; align-items:center; justify-content:center; gap:8px;\n  padding:13px 18px; min-height:48px; border-radius:var(--r-xs);\n  font-size:14px; font-weight:700; cursor:pointer; border:1.5px solid transparent;\n  transition:.15s; width:100%;\n}\n.btn:active{ transform:translateY(1px); }\n.btn-primary{ background:var(--primary); color:#fff; box-shadow:var(--shadow-sm); }\n.btn-primary:active{ background:var(--primary-600); }\n.btn-accent{ background:var(--accent); color:#fff; }\n.btn-success{ background:var(--success); color:#fff; }\n.btn-outline{ background:var(--surface); color:var(--primary); border-color:var(--primary); }\n.btn-ghost{ background:var(--surface-2); color:var(--text-2); border-color:var(--border); }\n.btn-sm{ min-height:auto; padding:8px 14px; font-size:12px; width:auto; border-radius:var(--r-xs); }\n.btn-block + .btn-block{ margin-top:10px; }\n\n/* ============================================================\n   BADGES / CHIPS / PILLS\n   ============================================================ */\n.chip{\n  display:inline-flex; align-items:center; gap:5px;\n  background:var(--surface-2); border:1px solid var(--border);\n  border-radius:7px; padding:3px 9px; font-size:12px; font-weight:600; color:var(--text);\n}\n.chip.area{ background:var(--primary-tint); border-color:var(--primary-soft); color:var(--primary); }\n.pill{\n  display:inline-flex; align-items:center; gap:4px;\n  border-radius:99px; padding:3px 10px; font-size:10.5px; font-weight:700;\n  letter-spacing:.03em; text-transform:uppercase;\n}\n.pill.open{ background:var(--danger-soft); color:var(--danger); }\n.pill.resolved{ background:var(--success-soft); color:var(--success); }\n\n.count-pill{\n  display:inline-flex; align-items:center; justify-content:center;\n  min-width:20px; height:20px; padding:0 6px; border-radius:10px;\n  background:var(--primary); color:#fff; font-size:11px; font-weight:700;\n}\n\n/* ============================================================\n   AVATAR\n   ============================================================ */\n.avatar{\n  border-radius:50%; display:flex; align-items:center; justify-content:center;\n  color:#fff; font-weight:700; flex:0 0 auto; text-transform:uppercase;\n}\n\n/* ============================================================\n   STATS\n   ============================================================ */\n.stat{\n  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-sm);\n  padding:13px 10px; text-align:center;\n}\n.stat .sv{ font-size:24px; font-weight:800; color:var(--text); font-variant-numeric:tabular-nums; line-height:1; }\n.stat .sl{ font-size:9.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--text-3); margin-top:6px; font-weight:600; }\n.stat.accent .sv{ color:var(--accent); }\n.stat.primary .sv{ color:var(--primary); }\n.stat.danger  .sv{ color:var(--danger); }\n.stat-row{ display:grid; gap:10px; }\n\n/* ============================================================\n   TABLE\n   ============================================================ */\n.tbl-wrap{ overflow-x:auto; border-radius:var(--r-sm); }\ntable.tbl{ width:100%; border-collapse:collapse; font-size:13px; }\ntable.tbl th{\n  text-align:left; padding:10px 12px; font-size:9.5px; font-weight:700;\n  letter-spacing:.06em; text-transform:uppercase; color:var(--text-3);\n  background:var(--surface-2); white-space:nowrap; border-bottom:1px solid var(--border);\n}\ntable.tbl td{ padding:11px 12px; border-bottom:1px solid var(--border); white-space:nowrap; }\ntable.tbl tr:last-child td{ border-bottom:none; }\ntable.tbl .tot-row td{ background:var(--surface-2); font-weight:800; border-top:2px solid var(--primary); }\n.num{ text-align:center; font-variant-numeric:tabular-nums; }\n\n/* ============================================================\n   ENGINEERING CARD\n   ============================================================ */\n.eng{\n  border-radius:var(--r-sm); border:1px solid var(--border);\n  background:var(--surface); padding:14px 15px; box-shadow:var(--shadow-sm);\n}\n.eng + .eng{ margin-top:10px; }\n.eng.open{ border-left:4px solid var(--danger); }\n.eng.resolved{ border-left:4px solid var(--success); background:var(--surface-2); }\n.eng .eng-meta{ display:flex; gap:7px; flex-wrap:wrap; align-items:center; margin-bottom:9px; }\n.eng .eng-date{ font-size:11px; color:var(--text-2); font-weight:600; }\n.eng .eng-id{ font-size:10px; color:var(--text-3); margin-left:auto; }\n.eng .eng-desc{ font-size:14px; line-height:1.6; color:var(--text); white-space:pre-wrap; }\n.eng .eng-photos{ display:flex; gap:8px; flex-wrap:wrap; margin-top:11px; }\n.eng .eng-photos img{ width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid var(--border); cursor:zoom-in; }\n.eng .resolved-stamp{\n  display:flex; align-items:center; gap:7px; margin-top:10px;\n  background:var(--success-soft); border-radius:8px; padding:7px 11px;\n  font-size:12px; color:var(--success); font-weight:600;\n}\n\n/* ============================================================\n   PENDING / STAGED\n   ============================================================ */\n.pending{\n  background:var(--surface); border:1.5px dashed var(--accent);\n  border-radius:var(--r); padding:15px; margin-bottom:16px;\n}\n.pending .ph{\n  display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;\n}\n.pending .ph-label{\n  font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;\n  color:var(--accent); display:flex; align-items:center; gap:7px;\n}\n.staged-row{\n  display:flex; align-items:center; gap:10px; padding:10px 0;\n  border-bottom:1px solid var(--border);\n}\n.staged-row:last-child{ border-bottom:none; }\n.staged-row .x{\n  width:30px; height:30px; flex:0 0 auto; border-radius:8px;\n  border:1px solid var(--danger); color:var(--danger); background:var(--danger-soft);\n  cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:14px;\n}\n\n/* ============================================================\n   FLASH / TOAST\n   ============================================================ */\n.flash{\n  position:absolute; left:14px; right:14px; top:14px; z-index:40;\n  background:var(--success); color:#fff; padding:13px 16px; border-radius:var(--r-sm);\n  font-size:14px; font-weight:600; box-shadow:var(--shadow-lg);\n  display:flex; align-items:center; gap:9px;\n  animation:flashIn .25s ease;\n}\n@keyframes flashIn{ from{ opacity:0; transform:translateY(-12px); } to{ opacity:1; transform:none; } }\n\n.banner{\n  display:flex; align-items:center; gap:10px; padding:12px 14px;\n  border-radius:var(--r-sm); font-size:13px; margin-bottom:14px; font-weight:500;\n}\n.banner.danger{ background:var(--danger-soft); color:var(--danger); border:1px solid #f3cccc; }\n.banner.info{ background:var(--info-soft); color:var(--info); border:1px solid #cfe0f3; }\n\n.alert{\n  background:var(--danger-soft); border:1px solid #f1c9c9; color:var(--danger);\n  border-radius:var(--r-xs); padding:11px 13px; font-size:13px; margin-bottom:13px; font-weight:500;\n}\n\n/* ============================================================\n   SEGMENTED FILTER\n   ============================================================ */\n.segmented{ display:inline-flex; background:var(--surface-2); border:1px solid var(--border);\n  border-radius:10px; padding:3px; gap:2px; }\n.segmented button{\n  border:none; background:none; cursor:pointer; padding:7px 14px; border-radius:8px;\n  font-size:12px; font-weight:600; color:var(--text-2); transition:.12s;\n}\n.segmented button.on{ background:var(--surface); color:var(--primary); box-shadow:var(--shadow-sm); }\n\n/* ============================================================\n   EMPTY STATE\n   ============================================================ */\n.empty{\n  text-align:center; padding:34px 20px; color:var(--text-3); font-size:14px;\n}\n.empty .ee{ font-size:30px; margin-bottom:10px; opacity:.6; }\n\n/* ============================================================\n   CHAT\n   ============================================================ */\n.chat-wrap{ display:flex; flex-direction:column; height:100%; }\n.chat-scroll{ flex:1; overflow-y:auto; padding:4px 2px; }\n.chat-scroll::-webkit-scrollbar{ width:0; }\n.msg-group{ margin-bottom:14px; display:flex; flex-direction:column; }\n.msg-group.me{ align-items:flex-end; }\n.msg-head{ display:flex; align-items:center; gap:7px; margin-bottom:5px; }\n.msg-head.me{ flex-direction:row-reverse; }\n.msg-head .nm{ font-size:12px; font-weight:700; }\n.msg-head .tm{ font-size:10px; color:var(--text-3); }\n.bubble{\n  max-width:78%; padding:10px 13px; font-size:14px; line-height:1.5;\n  border-radius:16px; word-break:break-word; margin-left:34px;\n}\n.msg-group.me .bubble{ margin-left:0; margin-right:34px; }\n.bubble.them{ background:var(--surface); border:1px solid var(--border); border-top-left-radius:5px; color:var(--text); }\n.bubble.me{ background:var(--primary); color:#fff; border-bottom-right-radius:5px; }\n.bubble + .bubble{ margin-top:4px; }\n.chat-input{\n  display:flex; gap:9px; align-items:flex-end; padding-top:11px;\n  border-top:1px solid var(--border);\n}\n.chat-input .ci-box{\n  flex:1; border:1.5px solid var(--border-strong); border-radius:22px;\n  padding:11px 16px; font-size:14px; outline:none; resize:none; max-height:90px; min-height:46px;\n}\n.chat-input .ci-box:focus{ border-color:var(--primary); }\n.chat-input .send{\n  width:46px; height:46px; flex:0 0 auto; border-radius:50%; border:none;\n  background:var(--primary); color:#fff; cursor:pointer; display:flex;\n  align-items:center; justify-content:center;\n}\n.chat-input .send:disabled{ background:var(--border-strong); cursor:default; }\n\n/* ============================================================\n   LIGHTBOX\n   ============================================================ */\n.lightbox{\n  position:absolute; inset:0; z-index:90; background:rgba(8,12,18,.88);\n  display:flex; align-items:center; justify-content:center; padding:24px;\n}\n.lightbox img{ max-width:100%; max-height:100%; border-radius:12px; }\n.lightbox .lx-close{ position:absolute; top:18px; right:18px; width:40px; height:40px;\n  border-radius:50%; background:rgba(255,255,255,.15); color:#fff; border:none;\n  font-size:20px; cursor:pointer; }\n\n/* ============================================================\n   SHEET (more menu / profile)\n   ============================================================ */\n.sheet-scrim{ position:absolute; inset:0; z-index:60; background:rgba(16,32,46,.42);\n  display:flex; align-items:flex-end; animation:fade .2s ease; }\n@keyframes fade{ from{ opacity:0; } to{ opacity:1; } }\n.sheet{\n  width:100%; background:var(--surface); border-radius:22px 22px 0 0;\n  padding:10px 18px calc(20px + env(safe-area-inset-bottom));\n  box-shadow:var(--shadow-lg); animation:sheetUp .26s cubic-bezier(.2,.8,.2,1);\n}\n@keyframes sheetUp{ from{ transform:translateY(100%); } to{ transform:none; } }\n.sheet .grip{ width:40px; height:4px; border-radius:2px; background:var(--border-strong);\n  margin:6px auto 14px; }\n.sheet .s-row{\n  display:flex; align-items:center; gap:13px; padding:14px 6px;\n  border-bottom:1px solid var(--border); cursor:pointer; font-size:15px; font-weight:600;\n}\n.sheet .s-row:last-child{ border-bottom:none; }\n.sheet .s-row .s-ico{ width:38px; height:38px; border-radius:11px; background:var(--surface-2);\n  display:flex; align-items:center; justify-content:center; color:var(--primary); flex:0 0 auto; }\n.sheet .s-row.danger{ color:var(--danger); }\n.sheet .s-row.danger .s-ico{ color:var(--danger); background:var(--danger-soft); }\n\n/* ============================================================\n   COMBOBOX (type-ahead sub-area)\n   ============================================================ */\n.cmb{ position:relative; }\n.cmb-list{\n  position:absolute; left:0; right:0; top:calc(100% + 5px); z-index:50;\n  background:var(--surface); border:1px solid var(--border-strong);\n  border-radius:var(--r-xs); box-shadow:var(--shadow);\n  max-height:190px; overflow-y:auto; padding:5px;\n}\n.cmb-item{\n  padding:10px 12px; border-radius:8px; font-size:14px; cursor:pointer;\n  display:flex; align-items:center; gap:6px; color:var(--text);\n}\n.cmb-item:hover{ background:var(--primary-tint); }\n.cmb-new{ color:var(--accent); font-weight:600; border-top:1px solid var(--border); margin-top:3px; padding-top:11px; border-radius:0 0 8px 8px; }\n.cmb-new:hover{ background:var(--accent-soft); }\n\n/* sub-area chip in management */\n.sa-chip{\n  display:inline-flex; align-items:center; gap:6px;\n  background:var(--surface-2); border:1px solid var(--border);\n  border-radius:8px; padding:5px 7px 5px 11px; font-size:13px; font-weight:600; color:var(--text);\n}\n.sa-chip button{\n  width:20px; height:20px; border:none; border-radius:6px; cursor:pointer;\n  background:var(--danger-soft); color:var(--danger);\n  display:flex; align-items:center; justify-content:center;\n}\n.sa-group{ padding:12px 0; border-bottom:1px solid var(--border); }\n.sa-group:last-child{ border-bottom:none; }\n\n/* ============================================================\n   MANAGEMENT ROWS (admin)\n   ============================================================ */\n.mgmt-row{\n  display:flex; align-items:center; gap:11px;\n  padding:11px 0; border-bottom:1px solid var(--border);\n}\n.mgmt-row:last-of-type{ border-bottom:none; }\n.sq{\n  width:38px; height:38px; flex:0 0 auto; border-radius:10px;\n  border:1px solid var(--border-strong); background:var(--surface);\n  color:var(--text-2); cursor:pointer; display:flex; align-items:center; justify-content:center;\n  transition:.15s;\n}\n.sq:active{ transform:scale(.93); }\n.sq:disabled{ opacity:.4; cursor:default; }\n.sq.ok{ border-color:var(--success); color:var(--success); background:var(--success-soft); }\n.sq.danger{ border-color:var(--danger); color:var(--danger); background:var(--danger-soft); }\n\n/* ============================================================\n   LOGIN\n   ============================================================ */\n.login{\n  position:absolute; inset:0; display:flex; flex-direction:column;\n  background:\n    linear-gradient(180deg, var(--primary-700) 0%, var(--primary) 46%, #0d5570 100%);\n  color:#fff; overflow:hidden;\n}\n.login .lg-deco{ position:absolute; inset:0; opacity:.5; pointer-events:none; }\n.login .lg-top{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;\n  padding:40px 32px 10px; position:relative; z-index:2; }\n.login .lg-logo{\n  width:74px; height:74px; border-radius:22px; margin-bottom:22px;\n  background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.2);\n  display:flex; align-items:center; justify-content:center;\n  backdrop-filter:blur(8px); box-shadow:var(--shadow-lg);\n}\n.login .lg-kicker{ font-size:11px; letter-spacing:.22em; text-transform:uppercase;\n  color:rgba(255,255,255,.7); font-weight:600; margin-bottom:8px; }\n.login .lg-title{ font-size:30px; font-weight:800; letter-spacing:-.02em; text-align:center; line-height:1.1; }\n.login .lg-tag{ font-size:13px; color:rgba(255,255,255,.62); margin-top:10px; text-align:center; }\n.login .lg-card{\n  position:relative; z-index:2; background:var(--surface); color:var(--text);\n  border-radius:26px 26px 0 0; padding:26px 24px calc(28px + env(safe-area-inset-bottom));\n  box-shadow:0 -10px 40px rgba(0,0,0,.25);\n}\n.login .lg-card h3{ font-size:18px; font-weight:700; margin:0 0 4px; }\n.login .lg-card p{ font-size:13px; color:var(--text-2); margin:0 0 20px; }\n.login .lg-hint{ font-size:11.5px; color:var(--text-3); text-align:center; margin-top:14px; }\n";
   document.head.appendChild(style);
+  var extra = document.createElement("style");
+  extra.textContent = ".cmb-hint{ padding:9px 12px; font-size:12px; color:var(--text-3); font-weight:500; }"
+    + ".topbar .brand-mark{ background:linear-gradient(150deg,#FF8A33,#E0322E)!important; box-shadow:0 2px 10px rgba(224,50,46,.35), inset 0 1px 0 rgba(255,255,255,.25)!important; }"
+    + ".login .lg-logo{ background:linear-gradient(150deg,#FF8A33,#E0322E)!important; border-color:rgba(255,150,90,.5)!important; box-shadow:0 10px 30px rgba(224,50,46,.45)!important; }"
+    + ".login{ background:linear-gradient(180deg,#0b1f29 0%,#0E4D64 44%,#0d5570 100%)!important; }"
+    + ".man-table{ display:flex; flex-direction:column; gap:12px; }"
+    + ".man-group{ background:var(--surface); border:1px solid var(--border); border-radius:10px; overflow:hidden; }"
+    + ".man-ghead{ display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:var(--surface-2); border-bottom:1px solid var(--border); }"
+    + ".man-gtag{ font-size:10.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#fff; padding:3px 9px; border-radius:6px; }"
+    + ".man-gtag.direct{ background:var(--accent); } .man-gtag.indirect{ background:var(--primary); } .man-gtag.support{ background:#6B7A90; }"
+    + ".man-gsub{ font-size:15px; font-weight:800; color:var(--text-2); }"
+    + ".man-row{ display:flex; align-items:center; gap:10px; padding:7px 12px; border-top:1px solid var(--border); }"
+    + ".man-row:first-of-type{ border-top:none; }"
+    + ".man-rl{ flex:1; font-size:14px; color:var(--text); }"
+    + ".man-row.on{ background:var(--accent-soft); }"
+    + ".man-row.on .man-rl{ font-weight:700; }"
+    + ".man-inp{ width:66px; text-align:center; padding:9px 8px; border:1.5px solid var(--border-strong); border-radius:8px; font-size:15px; font-weight:600; outline:none; -webkit-appearance:none; appearance:none; background:var(--surface); }"
+    + ".man-inp:focus{ border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-soft); }"
+    + ".man-row.on .man-inp{ border-color:var(--accent); color:var(--accent); }"
+    + ".man-grand{ display:flex; align-items:center; justify-content:space-between; padding:13px 16px; background:var(--accent); color:#fff; border-radius:10px; font-weight:700; }"
+    + ".man-grand span:last-child{ font-size:24px; font-weight:800; }";
+  document.head.appendChild(extra);
 })();
 
 
@@ -42,8 +64,8 @@ const DEFAULT_PASSWORDS = {
   Serkan:"643844", Supervisor01:"sup0101", Supervisor02:"sup0201", Supervisor03:"sup0301",
   Guest:"guest01"
 };
-const DEFAULT_AREAS = ["North-A", "North-B", "SLC", "South"];
-const DEFAULT_PROJECT = { name:"Site Follow-Up", kicker:"TR Qatar · EPC_04 Piping", company:"EPC_04 Piping" };
+const DEFAULT_AREAS = [];   // no sample areas — each project loads its own (sheet / import)
+const DEFAULT_PROJECT = { name:"SECOSYS", kicker:"SECO System", company:"SECO System" };
 
 /* ⚠️ Same web-app URL as your current app */
 const GAS_URL = "https://script.google.com/macros/s/AKfycbwMu8pzZrJ2zTQcf4qa8Iewdeh_XTcHMAfsyUeZMrAI1NCsBmU9lhK_eaaLRhBJh4nX/exec";
@@ -208,8 +230,48 @@ function colorFor(name){
   return PALETTE[h % PALETTE.length];
 }
 
+/* ─────────── Manpower role model (3 groups) ─────────── */
+const ROLE_GROUPS = [
+  { id:"direct", label:"Direct", roles:[
+    { key:"welder",        label:"Welder" },
+    { key:"pipeFitter",    label:"Pipe Fitter" },
+    { key:"fitterHelper",  label:"Fitter Helper" },
+    { key:"rigger",        label:"Rigger" },
+    { key:"grinder",       label:"Grinder" },
+    { key:"gasCutter",     label:"Gas Cutter" },
+    { key:"hydrotestCrew", label:"Hydrotest Crew" },
+    { key:"greLaminator",  label:"GRE Laminator" },
+  ]},
+  { id:"indirect", label:"Indirect", roles:[
+    { key:"foreman",        label:"Foreman" },
+    { key:"supervisorRole", label:"Supervisor" },
+    { key:"fieldEngineer",  label:"Field Engineer" },
+    { key:"qcInspector",    label:"QC Inspector" },
+    { key:"hseOfficer",     label:"HSE Officer" },
+  ]},
+  { id:"support", label:"Support", roles:[
+    { key:"scaffolder",    label:"Scaffolder" },
+    { key:"craneOperator", label:"Crane Operator" },
+    { key:"helperLabour",  label:"Helper / Labour" },
+  ]},
+];
+const ALL_ROLES = ROLE_GROUPS.flatMap(g => g.roles);
+const ROLE_LABEL = Object.fromEntries(ALL_ROLES.map(r => [r.key, r.label]));
+
+const roleVal = (r, key) => { const n = parseInt(r[key]); return isNaN(n) ? 0 : n; };
+/* Works for new (per-role) and old (welder/pipeFitter only) rows. */
+function manStats(r){
+  const g = { direct:0, indirect:0, support:0 };
+  ROLE_GROUPS.forEach(grp => grp.roles.forEach(role => { g[grp.id] += roleVal(r, role.key); }));
+  let total = g.direct + g.indirect + g.support;
+  if(total === 0 && r.totalManpower){ total = parseInt(r.totalManpower) || 0; }
+  const byRole = ALL_ROLES.map(role => ({ ...role, n:roleVal(r, role.key) })).filter(x => x.n > 0);
+  return { ...g, total, byRole };
+}
+const blankMan = () => Object.fromEntries(ALL_ROLES.map(r => [r.key, ""]));
+
 /* ─────────── Empty form factories ─────────── */
-const emptyForm   = (sup="") => ({ date:todayStr(), supervisor:sup, area:"", subArea:"", welder:"", pipeFitter:"", jobDescription:"" });
+const emptyForm   = (sup="") => ({ date:todayStr(), supervisor:sup, area:"", subArea:"", man:blankMan(), jobDescription:"" });
 const emptyTarget = (sup="") => ({ date:todayStr(), supervisor:sup, area:"", weldTarget:"", fitUpTarget:"", tpCompletion:"" });
 const emptyEng    = () => ({ date:todayStr(), area:"", subArea:"", description:"", photos:[] });
 
@@ -322,8 +384,8 @@ function TopBar({ session, project, openCount, onProfile, onRecords, onBell }){
     <div className="topbar">
       <div className="brand-mark"><Icon name="flame" size={20} /></div>
       <div className="t-titles">
-        <span className="t-kicker">{project.kicker}</span>
         <span className="t-title">{project.name}</span>
+        <span className="t-kicker" style={{marginTop:1}}>{project.kicker}</span>
       </div>
       <div className="t-actions">
         <button className="iconbtn" onClick={onBell}>
@@ -380,10 +442,20 @@ function Combobox({ value, onChange, options=[], placeholder, disabled }){
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, []);
-  const q = (value || "").toLowerCase();
-  const filtered = options.filter(o => o.toLowerCase().includes(q) && o.toLowerCase() !== q);
+  const q = (value || "").trim().toLowerCase();
   const exact = options.some(o => o.toLowerCase() === q && q);
-  const showList = open && !disabled && (filtered.length > 0 || (q && !exact));
+  const matches = q ? options.filter(o => o.toLowerCase().includes(q) && o.toLowerCase() !== q) : [];
+  const CAP = 60;
+  const shown = matches.slice(0, CAP);
+
+  // bold the matched fragment
+  const hi = (text) => {
+    const i = text.toLowerCase().indexOf(q);
+    if(i < 0 || !q) return text;
+    return (<>{text.slice(0,i)}<b style={{ color:"var(--primary)" }}>{text.slice(i,i+q.length)}</b>{text.slice(i+q.length)}</>);
+  };
+
+  const showList = open && !disabled && (q ? true : options.length > 0);
   return (
     <div className="cmb" ref={wrapRef}>
       <input className="input" value={value} disabled={disabled}
@@ -392,9 +464,18 @@ function Combobox({ value, onChange, options=[], placeholder, disabled }){
         placeholder={placeholder} autoComplete="off" />
       {showList && (
         <div className="cmb-list">
-          {filtered.map(o => (
-            <div key={o} className="cmb-item" onMouseDown={() => { onChange(o); setOpen(false); }}>{o}</div>
+          {!q && (
+            <div className="cmb-hint">{options.length} sub-area{options.length===1?"":"s"} · type to filter</div>
+          )}
+          {q && shown.length === 0 && !exact && (
+            <div className="cmb-hint">No match — keep typing to add a new one</div>
+          )}
+          {shown.map(o => (
+            <div key={o} className="cmb-item" onMouseDown={() => { onChange(o); setOpen(false); }}>{hi(o)}</div>
           ))}
+          {matches.length > CAP && (
+            <div className="cmb-hint">+{matches.length - CAP} more — type more to narrow</div>
+          )}
           {q && !exact && (
             <div className="cmb-item cmb-new" onMouseDown={() => setOpen(false)}>
               <Icon name="plus" size={13} /> Use “{value}” &nbsp;<span style={{ color:"var(--text-3)", fontWeight:500 }}>· new, will be saved</span>
@@ -412,22 +493,27 @@ function ReportScreen({ session, reports, supervisors, areas, subAreas, onAddSub
   const [form, setForm] = useState(emptyForm(session.name));
   const [staged, setStaged] = useState([]);
   const [err, setErr] = useState("");
-  const total = (parseInt(form.welder)||0) + (parseInt(form.pipeFitter)||0);
+  const grp = Object.fromEntries(ROLE_GROUPS.map(g => [g.id, g.roles.reduce((s,r)=>s+(parseInt(form.man[r.key])||0),0)]));
+  const total = grp.direct + grp.indirect + grp.support;
 
   const sf = (k,v) => setForm(p => ({ ...p, [k]:v }));
+  const sm = (key,v) => setForm(p => ({ ...p, man:{ ...p.man, [key]:v } }));
   const add = () => {
-    const { date, supervisor, area, welder, pipeFitter, jobDescription } = form;
-    if(!date || !supervisor || !area || welder==="" || pipeFitter==="" || !jobDescription){
-      setErr("Please fill in all required (*) fields."); return;
+    const { date, supervisor, area, jobDescription } = form;
+    if(!date || !supervisor || !area || !jobDescription){
+      setErr("Please fill Date, Supervisor, Area and Job Description."); return;
     }
+    if(total <= 0){ setErr("Enter at least one worker in the manpower table."); return; }
     setErr("");
     if(form.subArea && form.area && !(subAreas[form.area]||[]).includes(form.subArea)) onAddSubArea(form.area, form.subArea);
+    const roleCounts = Object.fromEntries(ALL_ROLES.map(r => [r.key, parseInt(form.man[r.key])||0]));
     setStaged(p => [...p, {
       id:makeId("R"), date, supervisor, area, subArea:form.subArea||"-",
-      welder:parseInt(welder)||0, pipeFitter:parseInt(pipeFitter)||0,
-      totalManpower:(parseInt(welder)||0)+(parseInt(pipeFitter)||0), jobDescription
+      ...roleCounts,
+      directTotal:grp.direct, indirectTotal:grp.indirect, supportTotal:grp.support,
+      totalManpower:total, jobDescription
     }]);
-    setForm(p => ({ ...p, area:"", subArea:"", welder:"", pipeFitter:"", jobDescription:"" }));
+    setForm(p => ({ ...p, area:"", subArea:"", man:blankMan(), jobDescription:"" }));
   };
   const submit = () => {
     if(!staged.length) return;
@@ -437,7 +523,7 @@ function ReportScreen({ session, reports, supervisors, areas, subAreas, onAddSub
   };
 
   const myToday = reports.filter(r => r.supervisor===session.name && r.date===todayStr());
-  const sumOf = k => staged.reduce((s,e)=>s+e[k],0);
+  const sumOf = k => staged.reduce((s,e)=>s+(e[k]||0),0);
 
   return (
     <div>
@@ -457,16 +543,17 @@ function ReportScreen({ session, reports, supervisors, areas, subAreas, onAddSub
                 <div style={{ display:"flex", gap:7, alignItems:"center", flexWrap:"wrap" }}>
                   <span className="chip area">{e.area}</span>
                   {e.subArea!=="-" && <span style={{fontSize:11,color:"var(--text-3)"}}>{e.subArea}</span>}
-                  <span style={{fontSize:12,color:"var(--text-2)"}}>W {e.welder} · PF {e.pipeFitter} · <strong style={{color:"var(--accent)"}}>{e.totalManpower}</strong></span>
+                  <span style={{fontSize:12,color:"var(--text-2)"}}>D {e.directTotal} · I {e.indirectTotal} · S {e.supportTotal} · <strong style={{color:"var(--accent)"}}>{e.totalManpower}</strong></span>
                 </div>
               </div>
               <button className="x" onClick={()=>setStaged(p=>p.filter(x=>x.id!==e.id))}><Icon name="x" size={13}/></button>
             </div>
           ))}
           <div style={{ display:"flex", gap:16, marginTop:12, paddingTop:11, borderTop:"1px solid var(--border)", fontSize:12, color:"var(--text-2)" }}>
-            <span>Welder <strong className="tnum" style={{color:"var(--text)"}}>{sumOf("welder")}</strong></span>
-            <span>Fitter <strong className="tnum" style={{color:"var(--text)"}}>{sumOf("pipeFitter")}</strong></span>
-            <span>Total MP <strong className="tnum" style={{color:"var(--accent)"}}>{sumOf("totalManpower")}</strong></span>
+            <span>Direct <strong className="tnum" style={{color:"var(--text)"}}>{sumOf("directTotal")}</strong></span>
+            <span>Indirect <strong className="tnum" style={{color:"var(--text)"}}>{sumOf("indirectTotal")}</strong></span>
+            <span>Support <strong className="tnum" style={{color:"var(--text)"}}>{sumOf("supportTotal")}</strong></span>
+            <span>Total <strong className="tnum" style={{color:"var(--accent)"}}>{sumOf("totalManpower")}</strong></span>
           </div>
         </div>
       )}
@@ -511,19 +598,30 @@ function ReportScreen({ session, reports, supervisors, areas, subAreas, onAddSub
         </div>
 
         <div className="subpanel">
-          <div className="sp-title"><Icon name="user" size={14}/> Manpower</div>
-          <div className="grid-3">
-            <div>
-              <label className="label">Welder <span className="req">*</span></label>
-              <input type="number" min="0" inputMode="numeric" className="input" value={form.welder} onChange={e=>sf("welder",e.target.value)} placeholder="0" />
-            </div>
-            <div>
-              <label className="label">Fitter <span className="req">*</span></label>
-              <input type="number" min="0" inputMode="numeric" className="input" value={form.pipeFitter} onChange={e=>sf("pipeFitter",e.target.value)} placeholder="0" />
-            </div>
-            <div>
-              <label className="label">Total</label>
-              <div className="total-box tnum">{total}</div>
+          <div className="sp-title"><Icon name="user" size={14}/> Manpower <span className="req">*</span></div>
+          <div className="man-table">
+            {ROLE_GROUPS.map(g => (
+              <div className="man-group" key={g.id}>
+                <div className="man-ghead">
+                  <span className={"man-gtag " + g.id}>{g.label}</span>
+                  <span className="man-gsub tnum">{grp[g.id]}</span>
+                </div>
+                {g.roles.map(role => {
+                  const v = form.man[role.key];
+                  const on = (parseInt(v)||0) > 0;
+                  return (
+                    <div className={"man-row" + (on ? " on" : "")} key={role.key}>
+                      <span className="man-rl">{role.label}</span>
+                      <input type="number" min="0" inputMode="numeric" className="man-inp tnum"
+                        value={v} onChange={e=>sm(role.key, e.target.value)} placeholder="0" />
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+            <div className="man-grand">
+              <span>Total manpower</span>
+              <span className="tnum">{total}</span>
             </div>
           </div>
         </div>
@@ -547,7 +645,7 @@ function ReportScreen({ session, reports, supervisors, areas, subAreas, onAddSub
                 <div style={{ display:"flex", gap:7, alignItems:"center", flexWrap:"wrap", marginBottom:3 }}>
                   <span className="chip area">{r.area}</span>
                   {r.subArea!=="-" && <span style={{fontSize:11,color:"var(--text-3)"}}>{r.subArea}</span>}
-                  <span style={{fontSize:12,color:"var(--text-2)"}}>W {r.welder} · PF {r.pipeFitter} · <strong style={{color:"var(--accent)"}}>{r.totalManpower}</strong></span>
+                  <span style={{fontSize:12,color:"var(--text-2)"}}>{manStats(r).total>0 && <>MP <strong style={{color:"var(--accent)"}}>{manStats(r).total}</strong></>}</span>
                 </div>
                 <div style={{ fontSize:12, color:"var(--text-3)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{r.jobDescription}</div>
               </div>
@@ -582,8 +680,8 @@ function TargetScreen({ session, reports, supervisors, areas, onSubmit, showFlas
   };
 
   const areaReports = form.area ? reports.filter(r=>r.date===form.date && r.area===form.area) : [];
-  const aW = areaReports.reduce((s,r)=>s+r.welder,0);
-  const aPF = areaReports.reduce((s,r)=>s+r.pipeFitter,0);
+  const aDir = areaReports.reduce((s,r)=>s+manStats(r).direct,0);
+  const aTot = areaReports.reduce((s,r)=>s+manStats(r).total,0);
   const aSup = [...new Set(areaReports.map(r=>r.supervisor))].join(", ") || "—";
 
   return (
@@ -638,8 +736,8 @@ function TargetScreen({ session, reports, supervisors, areas, onSubmit, showFlas
 
         {form.area && (
           <div className="subpanel" style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, textAlign:"center" }}>
-            <div><div className="sl" style={{fontSize:9.5,color:"var(--text-3)",textTransform:"uppercase",letterSpacing:".06em"}}>Welder</div><div className="tnum" style={{fontSize:22,fontWeight:800,color:"var(--accent)"}}>{aW||"—"}</div></div>
-            <div><div className="sl" style={{fontSize:9.5,color:"var(--text-3)",textTransform:"uppercase",letterSpacing:".06em"}}>Fitter</div><div className="tnum" style={{fontSize:22,fontWeight:800,color:"var(--accent)"}}>{aPF||"—"}</div></div>
+            <div><div className="sl" style={{fontSize:9.5,color:"var(--text-3)",textTransform:"uppercase",letterSpacing:".06em"}}>Direct</div><div className="tnum" style={{fontSize:22,fontWeight:800,color:"var(--accent)"}}>{aDir||"—"}</div></div>
+            <div><div className="sl" style={{fontSize:9.5,color:"var(--text-3)",textTransform:"uppercase",letterSpacing:".06em"}}>Total MP</div><div className="tnum" style={{fontSize:22,fontWeight:800,color:"var(--accent)"}}>{aTot||"—"}</div></div>
             <div><div className="sl" style={{fontSize:9.5,color:"var(--text-3)",textTransform:"uppercase",letterSpacing:".06em"}}>Supervisor</div><div style={{fontSize:13,fontWeight:700,marginTop:4}}>{aSup}</div></div>
             {areaReports.length===0 && <div style={{gridColumn:"1/-1",fontSize:11.5,color:"var(--text-3)"}}>No manpower submitted for {form.area} yet.</div>}
           </div>
@@ -790,11 +888,12 @@ function SummaryScreen({ session, reports, targets, engIssues, onToggle }){
 
   const areaMap = {};
   sumReports.forEach(r => {
-    if(!areaMap[r.area]) areaMap[r.area] = { welder:0, pipeFitter:0, total:0, entries:[] };
-    const a = areaMap[r.area];
-    a.welder += r.welder; a.pipeFitter += r.pipeFitter; a.total += r.totalManpower; a.entries.push(r);
+    if(!areaMap[r.area]) areaMap[r.area] = { direct:0, indirect:0, support:0, total:0, entries:[] };
+    const a = areaMap[r.area]; const m = manStats(r);
+    a.direct += m.direct; a.indirect += m.indirect; a.support += m.support; a.total += m.total; a.entries.push(r);
   });
-  const sum = k => sumReports.reduce((s,r)=>s+r[k],0);
+  const sumMan = k => sumReports.reduce((s,r)=>s+manStats(r)[k],0);
+  const tradeTotals = ALL_ROLES.map(role => ({ ...role, n:sumReports.reduce((s,r)=>s+roleVal(r,role.key),0) })).filter(x=>x.n>0);
   const openOnDate = engIssues.filter(e=>{
     const sub = (e.submittedAt||e.date).slice(0,10);
     if((e.status||"open")==="open") return e.date <= sumDate;
@@ -812,16 +911,16 @@ function SummaryScreen({ session, reports, targets, engIssues, onToggle }){
       <div className="card pad">
         <div className="section-head"><span className="bar"/><span className="st">👷 Manpower</span></div>
         <div className="stat-row" style={{ gridTemplateColumns:"repeat(2,1fr)", marginBottom:16 }}>
-          <Stat label="Welders" value={sum("welder")} />
-          <Stat label="Pipe Fitters" value={sum("pipeFitter")} />
-          <Stat label="Reports" value={sumReports.length} tone="primary" />
-          <Stat label="Total MP" value={sum("totalManpower")} tone="accent" />
+          <Stat label="Direct" value={sumMan("direct")} tone="accent" />
+          <Stat label="Indirect" value={sumMan("indirect")} tone="primary" />
+          <Stat label="Support" value={sumMan("support")} />
+          <Stat label="Total MP" value={sumMan("total")} tone="accent" />
         </div>
         {Object.keys(areaMap).length===0
           ? <div className="empty"><div className="ee">📊</div>No manpower data for this date.</div>
           : <div className="tbl-wrap">
               <table className="tbl">
-                <thead><tr>{["Area","Sup.","W","PF","Total"].map(h=><th key={h} className={h==="Area"||h==="Sup."?"":"num"}>{h}</th>)}</tr></thead>
+                <thead><tr>{["Area","Sup.","Dir","Ind","Sup","Total"].map(h=><th key={h} className={h==="Area"||h==="Sup."?"":"num"}>{h}</th>)}</tr></thead>
                 <tbody>
                   {Object.entries(areaMap).map(([area,d]) => {
                     const sups = [...new Set(d.entries.map(e=>e.supervisor))].join(", ");
@@ -829,21 +928,33 @@ function SummaryScreen({ session, reports, targets, engIssues, onToggle }){
                       <tr key={area}>
                         <td><span className="chip area">{area}</span></td>
                         <td style={{ fontSize:12, color:"var(--text-2)", whiteSpace:"normal" }}>{sups}</td>
-                        <td className="num">{d.welder}</td>
-                        <td className="num">{d.pipeFitter}</td>
+                        <td className="num">{d.direct}</td>
+                        <td className="num">{d.indirect}</td>
+                        <td className="num">{d.support}</td>
                         <td className="num" style={{ fontWeight:800, color:"var(--accent)" }}>{d.total}</td>
                       </tr>
                     );
                   })}
                   <tr className="tot-row">
                     <td colSpan={2} style={{ fontSize:10, letterSpacing:".06em", textTransform:"uppercase", color:"var(--text-2)" }}>Total</td>
-                    <td className="num">{sum("welder")}</td>
-                    <td className="num">{sum("pipeFitter")}</td>
-                    <td className="num" style={{ fontSize:16, color:"var(--accent)" }}>{sum("totalManpower")}</td>
+                    <td className="num">{sumMan("direct")}</td>
+                    <td className="num">{sumMan("indirect")}</td>
+                    <td className="num">{sumMan("support")}</td>
+                    <td className="num" style={{ fontSize:16, color:"var(--accent)" }}>{sumMan("total")}</td>
                   </tr>
                 </tbody>
               </table>
             </div>}
+        {tradeTotals.length > 0 && (
+          <div style={{ marginTop:14 }}>
+            <div className="sl" style={{ fontSize:9.5, color:"var(--text-3)", textTransform:"uppercase", letterSpacing:".07em", fontWeight:700, marginBottom:8 }}>By trade</div>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:7 }}>
+              {tradeTotals.map(t => (
+                <span key={t.key} className="chip" style={{ gap:6 }}>{t.label} <strong className="tnum" style={{ color:"var(--accent)" }}>{t.n}</strong></span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {dayTargets.length > 0 && (
@@ -911,6 +1022,7 @@ function RecordsScreen({ session, reports, targets, engIssues, supervisors, area
   const fEng = engIssues.filter(r=>(fArea==="All"||r.area===fArea)&&(!fDate||r.date===fDate)&&(engFilter==="all"||(r.status||"open")===engFilter)).slice().sort((a,b)=>b.date.localeCompare(a.date));
   const fTargets = targets.filter(t=>(fSup==="All"||t.supervisor===fSup)&&(!fDate||t.date===fDate)).slice().sort((a,b)=>b.date.localeCompare(a.date));
   const sum = k => fReports.reduce((s,r)=>s+r[k],0);
+  const sumMan = k => fReports.reduce((s,r)=>s+manStats(r)[k],0);
 
   const csv = (rows, head, mapRow, name) => {
     const lines = [head.join(","), ...rows.map(r => mapRow(r).map(c=>`"${String(c??"").replace(/"/g,'""')}"`).join(","))];
@@ -958,9 +1070,11 @@ function RecordsScreen({ session, reports, targets, engIssues, supervisors, area
   };
   const runImport = () => {
     const pairs = bulkText.split(/\r?\n/)
-      .map(l => l.split(/\t|,|;/).map(s => s.trim()))
-      .filter(r => r[0] && !/^area$/i.test(r[0]))
-      .map(r => [r[0], r[1] || ""]);
+      .map(l => {
+        const m = l.match(/^\s*([^\t,]+?)\s*[\t,]\s*([\s\S]*?)\s*$/);
+        return m ? [m[1].trim(), m[2].trim()] : [l.trim(), ""];
+      })
+      .filter(r => r[0] && !/^area$/i.test(r[0]));
     if(!pairs.length) { showFlash("Nothing to import"); return; }
     onImportAreaMap(pairs);
     const nAreas = new Set(pairs.map(p=>p[0])).size;
@@ -1002,8 +1116,8 @@ function RecordsScreen({ session, reports, targets, engIssues, supervisors, area
 
       <div className="stat-row" style={{ gridTemplateColumns:"repeat(4,1fr)", margin:"14px 0" }}>
         <Stat label="Reports" value={fReports.length} tone="primary" />
-        <Stat label="Welders" value={sum("welder")} />
-        <Stat label="Fitters" value={sum("pipeFitter")} />
+        <Stat label="Direct" value={sumMan("direct")} tone="accent" />
+        <Stat label="Indirect" value={sumMan("indirect")} />
         <Stat label="Issues" value={fEng.length} tone="danger" />
       </div>
 
@@ -1019,31 +1133,38 @@ function RecordsScreen({ session, reports, targets, engIssues, supervisors, area
         <div className="card pad">
           <div className="section-head">
             <span className="bar"/><span className="st">Manpower records</span>
-            <button className="btn btn-ghost btn-sm right" onClick={()=>csv(fReports,["Date","Supervisor","Area","Sub-Area","Welder","Pipe Fitter","Total","Job Description"],r=>[r.date,r.supervisor,r.area,r.subArea,r.welder,r.pipeFitter,r.totalManpower,r.jobDescription],"Manpower")}><Icon name="download" size={14}/> CSV</button>
+            <button className="btn btn-ghost btn-sm right" onClick={()=>csv(fReports,["Date","Supervisor","Area","Sub-Area",...ALL_ROLES.map(r=>r.label),"Direct","Indirect","Support","Total","Job Description"],r=>{ const m=manStats(r); return [r.date,r.supervisor,r.area,r.subArea,...ALL_ROLES.map(role=>roleVal(r,role.key)),m.direct,m.indirect,m.support,m.total,r.jobDescription]; },"Manpower")}><Icon name="download" size={14}/> CSV</button>
           </div>
           {fReports.length===0 ? <div className="empty"><div className="ee">🔍</div>No records found.</div> :
             <div className="tbl-wrap">
               <table className="tbl">
-                <thead><tr>{["Date","Sup.","Area","W","PF","Tot"].map(h=><th key={h} className={["W","PF","Tot"].includes(h)?"num":""}>{h}</th>)}</tr></thead>
+                <thead><tr>{["Date","Sup.","Area","Dir","Ind","Sup","Tot"].map(h=><th key={h} className={["Dir","Ind","Sup","Tot"].includes(h)?"num":""}>{h}</th>)}</tr></thead>
                 <tbody>
-                  {fReports.map(r => (
+                  {fReports.map(r => {
+                    const m = manStats(r);
+                    return (
                     <React.Fragment key={r.id}>
                       <tr onClick={()=>setExpanded(expanded===r.id?null:r.id)} style={{ cursor:"pointer" }}>
                         <td style={{ color:"var(--text-2)", fontSize:12 }}>{r.date.slice(5)}</td>
                         <td style={{ fontWeight:600 }}>{r.supervisor}</td>
                         <td><span className="chip area">{r.area}</span></td>
-                        <td className="num">{r.welder}</td>
-                        <td className="num">{r.pipeFitter}</td>
-                        <td className="num" style={{ fontWeight:800, color:"var(--accent)" }}>{r.totalManpower}</td>
+                        <td className="num">{m.direct}</td>
+                        <td className="num">{m.indirect}</td>
+                        <td className="num">{m.support}</td>
+                        <td className="num" style={{ fontWeight:800, color:"var(--accent)" }}>{m.total}</td>
                       </tr>
                       {expanded===r.id &&
-                        <tr><td colSpan={6} style={{ background:"var(--surface-2)", whiteSpace:"normal" }}>
+                        <tr><td colSpan={7} style={{ background:"var(--surface-2)", whiteSpace:"normal" }}>
+                          {m.byRole.length>0 && <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:10 }}>
+                            {m.byRole.map(x => <span key={x.key} className="chip" style={{ gap:5 }}>{x.label} <strong className="tnum" style={{color:"var(--accent)"}}>{x.n}</strong></span>)}
+                          </div>}
                           <div style={{ fontSize:9.5, color:"var(--primary)", fontWeight:700, textTransform:"uppercase", letterSpacing:".06em", marginBottom:5 }}>{r.subArea!=="-"?r.subArea+" · ":""}Job description</div>
                           <div style={{ fontSize:13, lineHeight:1.6, color:"var(--text)" }}>{r.jobDescription}</div>
                           <button className="btn btn-sm" style={{ marginTop:10, color:"var(--danger)", border:"1px solid var(--danger)", background:"var(--danger-soft)" }} onClick={(e)=>{ e.stopPropagation(); onDeleteReport(r.id); }}><Icon name="trash" size={13}/> Delete</button>
                         </td></tr>}
                     </React.Fragment>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>}
@@ -1491,8 +1612,8 @@ function App(){
       <div className="login">
         <div className="lg-top">
           <div className="lg-logo"><Icon name="flame" size={36} color="#fff" /></div>
-          <div className="lg-kicker">{project.kicker}</div>
-          <div className="lg-title">{project.name}</div>
+          <div className="lg-title" style={{marginBottom:4}}>{project.name}</div>
+          <div className="lg-kicker" style={{letterSpacing:".18em"}}>{project.kicker}</div>
           <div className="lg-tag">Daily manpower, targets &amp; engineering — one place.</div>
         </div>
         <div className="lg-card">
