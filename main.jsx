@@ -1,110 +1,130 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
+import React, { useState, useEffect, useRef } from "react";
+import ReactDOM from "react-dom/client";
 
-import { useState, useEffect, useRef } from "react";
+/* ============================================================
+   QG EPC04 — Site Follow-Up  ·  single-file build (main.jsx)
+   Clean redesign · mobile-first · Google Sheets backend preserved
+   This ONE file replaces your old main.jsx. Nothing else changes.
+   ============================================================ */
 
+/* ---- Inject design-system CSS + font (no extra files needed) ---- */
+(function injectStyles(){
+  if (typeof document === "undefined") return;
+  if (document.getElementById("sfu-css")) return;
+  var link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&display=swap";
+  document.head.appendChild(link);
+  var style = document.createElement("style");
+  style.id = "sfu-css";
+  style.textContent = "/* ============================================================\n   SITE FOLLOW-UP — Design System\n   Clean corporate / light theme · mobile-first\n   ============================================================ */\n\n:root{\n  /* Brand */\n  --primary:        #0E4D64;   /* deep petrol blue */\n  --primary-600:    #0A3D50;\n  --primary-700:    #082F3D;\n  --primary-soft:   #E5F0F4;\n  --primary-tint:   #F2F8FA;\n\n  --accent:         #F2870D;   /* safety amber — totals / key data */\n  --accent-soft:    #FDF1E1;\n\n  /* Neutrals */\n  --bg:             #EEF1F5;\n  --surface:        #FFFFFF;\n  --surface-2:      #F5F7FA;\n  --border:         #E4E8EF;\n  --border-strong:  #D2DAE4;\n\n  --text:           #16202E;\n  --text-2:         #5C6B80;\n  --text-3:         #93A1B3;\n\n  /* Status */\n  --success:        #1E8E5A;\n  --success-soft:   #E7F6EE;\n  --danger:         #D14343;\n  --danger-soft:    #FBECEC;\n  --info:           #2B6CB0;\n  --info-soft:      #EAF2FB;\n  --warn:           #C9820B;\n  --warn-soft:      #FCF3E2;\n\n  /* Radius / shadow */\n  --r-xs: 8px;\n  --r-sm: 10px;\n  --r:    14px;\n  --r-lg: 20px;\n  --shadow-sm: 0 1px 2px rgba(16,32,46,.06), 0 1px 3px rgba(16,32,46,.04);\n  --shadow:    0 2px 6px rgba(16,32,46,.06), 0 8px 24px rgba(16,32,46,.06);\n  --shadow-lg: 0 12px 40px rgba(16,32,46,.16);\n\n  --font: \"IBM Plex Sans\", ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif;\n  --nav-h: 64px;\n}\n\n*{ box-sizing:border-box; }\nhtml,body{ margin:0; padding:0; }\nbody{\n  font-family:var(--font);\n  background:#cfd6df;\n  color:var(--text);\n  -webkit-font-smoothing:antialiased;\n  text-rendering:optimizeLegibility;\n}\nbutton{ font-family:inherit; }\ninput,select,textarea{ font-family:inherit; }\n.tnum{ font-variant-numeric:tabular-nums; }\n\n/* ============================================================\n   APP SHELL (real viewport — production)\n   ============================================================ */\nhtml, body, #root{ height:100%; }\nbody{ background:var(--bg); }\n.app{\n  position:fixed; inset:0;\n  display:flex; flex-direction:column;\n  min-height:0; background:var(--bg);\n  max-width:560px; margin:0 auto;\n  box-shadow:0 0 60px rgba(16,32,46,.08);\n}\n.screen{\n  flex:1 1 auto;\n  overflow-y:auto;\n  -webkit-overflow-scrolling:touch;\n  padding:18px 18px calc(var(--nav-h) + 28px);\n}\n.screen::-webkit-scrollbar{ width:0; }\n\n/* App-loading splash */\n.boot{\n  position:fixed; inset:0; display:flex; flex-direction:column;\n  align-items:center; justify-content:center; gap:18px;\n  background:var(--bg); color:var(--text-2);\n}\n.boot .spin{\n  width:38px; height:38px; border-radius:50%;\n  border:3px solid var(--border-strong); border-top-color:var(--primary);\n  animation:spin 0.8s linear infinite;\n}\n@keyframes spin{ to{ transform:rotate(360deg); } }\n\n/* ============================================================\n   TOP BAR\n   ============================================================ */\n.topbar{\n  flex:0 0 auto;\n  background:var(--surface);\n  border-bottom:1px solid var(--border);\n  padding:14px 18px;\n  display:flex; align-items:center; gap:12px;\n}\n.topbar .brand-mark{\n  width:38px; height:38px; border-radius:11px;\n  background:linear-gradient(150deg, var(--primary), var(--primary-700));\n  display:flex; align-items:center; justify-content:center;\n  color:#fff; flex:0 0 auto;\n  box-shadow:inset 0 1px 0 rgba(255,255,255,.18);\n}\n.topbar .t-titles{ display:flex; flex-direction:column; line-height:1.1; min-width:0; }\n.topbar .t-kicker{\n  font-size:9.5px; letter-spacing:.16em; text-transform:uppercase;\n  color:var(--primary); font-weight:700;\n}\n.topbar .t-title{ font-size:16px; font-weight:700; letter-spacing:-.01em; }\n.topbar .t-actions{ margin-left:auto; display:flex; align-items:center; gap:8px; }\n\n.iconbtn{\n  width:40px; height:40px; border-radius:12px;\n  border:1px solid var(--border); background:var(--surface);\n  color:var(--text-2); display:flex; align-items:center; justify-content:center;\n  cursor:pointer; position:relative; transition:.15s;\n}\n.iconbtn:active{ transform:scale(.94); }\n.iconbtn .dot{\n  position:absolute; top:-3px; right:-3px; min-width:18px; height:18px;\n  padding:0 5px; border-radius:9px; background:var(--danger); color:#fff;\n  font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center;\n  border:2px solid var(--surface);\n}\n\n/* ============================================================\n   BOTTOM NAV\n   ============================================================ */\n.bottomnav{\n  position:absolute; left:0; right:0; bottom:0;\n  border-radius:0;\n  height:var(--nav-h);\n  background:rgba(255,255,255,.92);\n  backdrop-filter:blur(12px);\n  border-top:1px solid var(--border);\n  display:flex; align-items:stretch;\n  padding-bottom:env(safe-area-inset-bottom);\n  z-index:20;\n}\n.navitem{\n  flex:1; border:none; background:none; cursor:pointer;\n  display:flex; flex-direction:column; align-items:center; justify-content:center;\n  gap:3px; color:var(--text-3); font-size:10px; font-weight:600;\n  position:relative; transition:.15s; padding-top:6px;\n}\n.navitem .ni-ico{ width:24px; height:24px; display:flex; align-items:center; justify-content:center; }\n.navitem.active{ color:var(--primary); }\n.navitem.active .ni-ico{ transform:translateY(-1px); }\n.navitem .ni-badge{\n  position:absolute; top:4px; left:calc(50% + 6px);\n  min-width:16px; height:16px; padding:0 4px; border-radius:8px;\n  background:var(--danger); color:#fff; font-size:9px; font-weight:700;\n  display:flex; align-items:center; justify-content:center;\n  border:2px solid #fff;\n}\n\n/* ============================================================\n   CARDS / SECTIONS\n   ============================================================ */\n.card{\n  background:var(--surface);\n  border:1px solid var(--border);\n  border-radius:var(--r);\n  box-shadow:var(--shadow-sm);\n}\n.card.pad{ padding:18px; }\n.card + .card{ margin-top:14px; }\n\n.section-head{\n  display:flex; align-items:center; gap:10px; margin-bottom:14px;\n}\n.section-head .bar{ width:4px; height:18px; border-radius:3px; background:var(--primary); }\n.section-head .st{\n  font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;\n  color:var(--text-2);\n}\n.section-head .right{ margin-left:auto; }\n\n.page-title{ font-size:22px; font-weight:700; letter-spacing:-.02em; margin:2px 0 16px; }\n.page-sub{ color:var(--text-2); font-size:13px; margin-top:-12px; margin-bottom:16px; }\n\n/* ============================================================\n   FORM CONTROLS\n   ============================================================ */\n.field{ margin-bottom:15px; }\n.label{\n  display:block; font-size:11px; font-weight:700; letter-spacing:.05em;\n  text-transform:uppercase; color:var(--text-2); margin-bottom:7px;\n}\n.label .req{ color:var(--accent); }\n.input, .select, .textarea{\n  width:100%; padding:13px 14px; min-height:48px;\n  background:var(--surface); border:1.5px solid var(--border-strong);\n  border-radius:var(--r-xs); color:var(--text); font-size:15px;\n  outline:none; transition:.15s; -webkit-appearance:none; appearance:none;\n}\n.textarea{ min-height:auto; resize:vertical; line-height:1.55; }\n.input:focus, .select:focus, .textarea:focus{\n  border-color:var(--primary); box-shadow:0 0 0 4px var(--primary-soft);\n}\n.input::placeholder, .textarea::placeholder{ color:var(--text-3); }\n.select{\n  cursor:pointer;\n  background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235C6B80' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\");\n  background-repeat:no-repeat; background-position:right 13px center; padding-right:40px;\n}\n.grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }\n.grid-3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }\n\n.locked-field{\n  display:flex; align-items:center; gap:10px;\n  padding:11px 14px; min-height:48px;\n  border:1.5px solid var(--primary-soft); border-radius:var(--r-xs);\n  background:var(--primary-tint);\n}\n.locked-field .lk{ margin-left:auto; font-size:10px; color:var(--text-3);\n  display:flex; align-items:center; gap:4px; }\n\n/* Numeric subpanel */\n.subpanel{\n  background:var(--surface-2); border:1px solid var(--border);\n  border-radius:var(--r-sm); padding:15px; margin-bottom:15px;\n}\n.subpanel .sp-title{\n  font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;\n  color:var(--primary); margin-bottom:13px; display:flex; align-items:center; gap:7px;\n}\n.total-box{\n  display:flex; align-items:center; justify-content:center;\n  border:1.5px solid var(--accent); background:var(--accent-soft);\n  border-radius:var(--r-xs); min-height:48px;\n  font-size:26px; font-weight:800; color:var(--accent); font-variant-numeric:tabular-nums;\n}\n\n/* ============================================================\n   BUTTONS\n   ============================================================ */\n.btn{\n  display:inline-flex; align-items:center; justify-content:center; gap:8px;\n  padding:13px 18px; min-height:48px; border-radius:var(--r-xs);\n  font-size:14px; font-weight:700; cursor:pointer; border:1.5px solid transparent;\n  transition:.15s; width:100%;\n}\n.btn:active{ transform:translateY(1px); }\n.btn-primary{ background:var(--primary); color:#fff; box-shadow:var(--shadow-sm); }\n.btn-primary:active{ background:var(--primary-600); }\n.btn-accent{ background:var(--accent); color:#fff; }\n.btn-success{ background:var(--success); color:#fff; }\n.btn-outline{ background:var(--surface); color:var(--primary); border-color:var(--primary); }\n.btn-ghost{ background:var(--surface-2); color:var(--text-2); border-color:var(--border); }\n.btn-sm{ min-height:auto; padding:8px 14px; font-size:12px; width:auto; border-radius:var(--r-xs); }\n.btn-block + .btn-block{ margin-top:10px; }\n\n/* ============================================================\n   BADGES / CHIPS / PILLS\n   ============================================================ */\n.chip{\n  display:inline-flex; align-items:center; gap:5px;\n  background:var(--surface-2); border:1px solid var(--border);\n  border-radius:7px; padding:3px 9px; font-size:12px; font-weight:600; color:var(--text);\n}\n.chip.area{ background:var(--primary-tint); border-color:var(--primary-soft); color:var(--primary); }\n.pill{\n  display:inline-flex; align-items:center; gap:4px;\n  border-radius:99px; padding:3px 10px; font-size:10.5px; font-weight:700;\n  letter-spacing:.03em; text-transform:uppercase;\n}\n.pill.open{ background:var(--danger-soft); color:var(--danger); }\n.pill.resolved{ background:var(--success-soft); color:var(--success); }\n\n.count-pill{\n  display:inline-flex; align-items:center; justify-content:center;\n  min-width:20px; height:20px; padding:0 6px; border-radius:10px;\n  background:var(--primary); color:#fff; font-size:11px; font-weight:700;\n}\n\n/* ============================================================\n   AVATAR\n   ============================================================ */\n.avatar{\n  border-radius:50%; display:flex; align-items:center; justify-content:center;\n  color:#fff; font-weight:700; flex:0 0 auto; text-transform:uppercase;\n}\n\n/* ============================================================\n   STATS\n   ============================================================ */\n.stat{\n  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-sm);\n  padding:13px 10px; text-align:center;\n}\n.stat .sv{ font-size:24px; font-weight:800; color:var(--text); font-variant-numeric:tabular-nums; line-height:1; }\n.stat .sl{ font-size:9.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--text-3); margin-top:6px; font-weight:600; }\n.stat.accent .sv{ color:var(--accent); }\n.stat.primary .sv{ color:var(--primary); }\n.stat.danger  .sv{ color:var(--danger); }\n.stat-row{ display:grid; gap:10px; }\n\n/* ============================================================\n   TABLE\n   ============================================================ */\n.tbl-wrap{ overflow-x:auto; border-radius:var(--r-sm); }\ntable.tbl{ width:100%; border-collapse:collapse; font-size:13px; }\ntable.tbl th{\n  text-align:left; padding:10px 12px; font-size:9.5px; font-weight:700;\n  letter-spacing:.06em; text-transform:uppercase; color:var(--text-3);\n  background:var(--surface-2); white-space:nowrap; border-bottom:1px solid var(--border);\n}\ntable.tbl td{ padding:11px 12px; border-bottom:1px solid var(--border); white-space:nowrap; }\ntable.tbl tr:last-child td{ border-bottom:none; }\ntable.tbl .tot-row td{ background:var(--surface-2); font-weight:800; border-top:2px solid var(--primary); }\n.num{ text-align:center; font-variant-numeric:tabular-nums; }\n\n/* ============================================================\n   ENGINEERING CARD\n   ============================================================ */\n.eng{\n  border-radius:var(--r-sm); border:1px solid var(--border);\n  background:var(--surface); padding:14px 15px; box-shadow:var(--shadow-sm);\n}\n.eng + .eng{ margin-top:10px; }\n.eng.open{ border-left:4px solid var(--danger); }\n.eng.resolved{ border-left:4px solid var(--success); background:var(--surface-2); }\n.eng .eng-meta{ display:flex; gap:7px; flex-wrap:wrap; align-items:center; margin-bottom:9px; }\n.eng .eng-date{ font-size:11px; color:var(--text-2); font-weight:600; }\n.eng .eng-id{ font-size:10px; color:var(--text-3); margin-left:auto; }\n.eng .eng-desc{ font-size:14px; line-height:1.6; color:var(--text); white-space:pre-wrap; }\n.eng .eng-photos{ display:flex; gap:8px; flex-wrap:wrap; margin-top:11px; }\n.eng .eng-photos img{ width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid var(--border); cursor:zoom-in; }\n.eng .resolved-stamp{\n  display:flex; align-items:center; gap:7px; margin-top:10px;\n  background:var(--success-soft); border-radius:8px; padding:7px 11px;\n  font-size:12px; color:var(--success); font-weight:600;\n}\n\n/* ============================================================\n   PENDING / STAGED\n   ============================================================ */\n.pending{\n  background:var(--surface); border:1.5px dashed var(--accent);\n  border-radius:var(--r); padding:15px; margin-bottom:16px;\n}\n.pending .ph{\n  display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;\n}\n.pending .ph-label{\n  font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;\n  color:var(--accent); display:flex; align-items:center; gap:7px;\n}\n.staged-row{\n  display:flex; align-items:center; gap:10px; padding:10px 0;\n  border-bottom:1px solid var(--border);\n}\n.staged-row:last-child{ border-bottom:none; }\n.staged-row .x{\n  width:30px; height:30px; flex:0 0 auto; border-radius:8px;\n  border:1px solid var(--danger); color:var(--danger); background:var(--danger-soft);\n  cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:14px;\n}\n\n/* ============================================================\n   FLASH / TOAST\n   ============================================================ */\n.flash{\n  position:absolute; left:14px; right:14px; top:14px; z-index:40;\n  background:var(--success); color:#fff; padding:13px 16px; border-radius:var(--r-sm);\n  font-size:14px; font-weight:600; box-shadow:var(--shadow-lg);\n  display:flex; align-items:center; gap:9px;\n  animation:flashIn .25s ease;\n}\n@keyframes flashIn{ from{ opacity:0; transform:translateY(-12px); } to{ opacity:1; transform:none; } }\n\n.banner{\n  display:flex; align-items:center; gap:10px; padding:12px 14px;\n  border-radius:var(--r-sm); font-size:13px; margin-bottom:14px; font-weight:500;\n}\n.banner.danger{ background:var(--danger-soft); color:var(--danger); border:1px solid #f3cccc; }\n.banner.info{ background:var(--info-soft); color:var(--info); border:1px solid #cfe0f3; }\n\n.alert{\n  background:var(--danger-soft); border:1px solid #f1c9c9; color:var(--danger);\n  border-radius:var(--r-xs); padding:11px 13px; font-size:13px; margin-bottom:13px; font-weight:500;\n}\n\n/* ============================================================\n   SEGMENTED FILTER\n   ============================================================ */\n.segmented{ display:inline-flex; background:var(--surface-2); border:1px solid var(--border);\n  border-radius:10px; padding:3px; gap:2px; }\n.segmented button{\n  border:none; background:none; cursor:pointer; padding:7px 14px; border-radius:8px;\n  font-size:12px; font-weight:600; color:var(--text-2); transition:.12s;\n}\n.segmented button.on{ background:var(--surface); color:var(--primary); box-shadow:var(--shadow-sm); }\n\n/* ============================================================\n   EMPTY STATE\n   ============================================================ */\n.empty{\n  text-align:center; padding:34px 20px; color:var(--text-3); font-size:14px;\n}\n.empty .ee{ font-size:30px; margin-bottom:10px; opacity:.6; }\n\n/* ============================================================\n   CHAT\n   ============================================================ */\n.chat-wrap{ display:flex; flex-direction:column; height:100%; }\n.chat-scroll{ flex:1; overflow-y:auto; padding:4px 2px; }\n.chat-scroll::-webkit-scrollbar{ width:0; }\n.msg-group{ margin-bottom:14px; display:flex; flex-direction:column; }\n.msg-group.me{ align-items:flex-end; }\n.msg-head{ display:flex; align-items:center; gap:7px; margin-bottom:5px; }\n.msg-head.me{ flex-direction:row-reverse; }\n.msg-head .nm{ font-size:12px; font-weight:700; }\n.msg-head .tm{ font-size:10px; color:var(--text-3); }\n.bubble{\n  max-width:78%; padding:10px 13px; font-size:14px; line-height:1.5;\n  border-radius:16px; word-break:break-word; margin-left:34px;\n}\n.msg-group.me .bubble{ margin-left:0; margin-right:34px; }\n.bubble.them{ background:var(--surface); border:1px solid var(--border); border-top-left-radius:5px; color:var(--text); }\n.bubble.me{ background:var(--primary); color:#fff; border-bottom-right-radius:5px; }\n.bubble + .bubble{ margin-top:4px; }\n.chat-input{\n  display:flex; gap:9px; align-items:flex-end; padding-top:11px;\n  border-top:1px solid var(--border);\n}\n.chat-input .ci-box{\n  flex:1; border:1.5px solid var(--border-strong); border-radius:22px;\n  padding:11px 16px; font-size:14px; outline:none; resize:none; max-height:90px; min-height:46px;\n}\n.chat-input .ci-box:focus{ border-color:var(--primary); }\n.chat-input .send{\n  width:46px; height:46px; flex:0 0 auto; border-radius:50%; border:none;\n  background:var(--primary); color:#fff; cursor:pointer; display:flex;\n  align-items:center; justify-content:center;\n}\n.chat-input .send:disabled{ background:var(--border-strong); cursor:default; }\n\n/* ============================================================\n   LIGHTBOX\n   ============================================================ */\n.lightbox{\n  position:absolute; inset:0; z-index:90; background:rgba(8,12,18,.88);\n  display:flex; align-items:center; justify-content:center; padding:24px;\n}\n.lightbox img{ max-width:100%; max-height:100%; border-radius:12px; }\n.lightbox .lx-close{ position:absolute; top:18px; right:18px; width:40px; height:40px;\n  border-radius:50%; background:rgba(255,255,255,.15); color:#fff; border:none;\n  font-size:20px; cursor:pointer; }\n\n/* ============================================================\n   SHEET (more menu / profile)\n   ============================================================ */\n.sheet-scrim{ position:absolute; inset:0; z-index:60; background:rgba(16,32,46,.42);\n  display:flex; align-items:flex-end; animation:fade .2s ease; }\n@keyframes fade{ from{ opacity:0; } to{ opacity:1; } }\n.sheet{\n  width:100%; background:var(--surface); border-radius:22px 22px 0 0;\n  padding:10px 18px calc(20px + env(safe-area-inset-bottom));\n  box-shadow:var(--shadow-lg); animation:sheetUp .26s cubic-bezier(.2,.8,.2,1);\n}\n@keyframes sheetUp{ from{ transform:translateY(100%); } to{ transform:none; } }\n.sheet .grip{ width:40px; height:4px; border-radius:2px; background:var(--border-strong);\n  margin:6px auto 14px; }\n.sheet .s-row{\n  display:flex; align-items:center; gap:13px; padding:14px 6px;\n  border-bottom:1px solid var(--border); cursor:pointer; font-size:15px; font-weight:600;\n}\n.sheet .s-row:last-child{ border-bottom:none; }\n.sheet .s-row .s-ico{ width:38px; height:38px; border-radius:11px; background:var(--surface-2);\n  display:flex; align-items:center; justify-content:center; color:var(--primary); flex:0 0 auto; }\n.sheet .s-row.danger{ color:var(--danger); }\n.sheet .s-row.danger .s-ico{ color:var(--danger); background:var(--danger-soft); }\n\n/* ============================================================\n   COMBOBOX (type-ahead sub-area)\n   ============================================================ */\n.cmb{ position:relative; }\n.cmb-list{\n  position:absolute; left:0; right:0; top:calc(100% + 5px); z-index:50;\n  background:var(--surface); border:1px solid var(--border-strong);\n  border-radius:var(--r-xs); box-shadow:var(--shadow);\n  max-height:190px; overflow-y:auto; padding:5px;\n}\n.cmb-item{\n  padding:10px 12px; border-radius:8px; font-size:14px; cursor:pointer;\n  display:flex; align-items:center; gap:6px; color:var(--text);\n}\n.cmb-item:hover{ background:var(--primary-tint); }\n.cmb-new{ color:var(--accent); font-weight:600; border-top:1px solid var(--border); margin-top:3px; padding-top:11px; border-radius:0 0 8px 8px; }\n.cmb-new:hover{ background:var(--accent-soft); }\n\n/* sub-area chip in management */\n.sa-chip{\n  display:inline-flex; align-items:center; gap:6px;\n  background:var(--surface-2); border:1px solid var(--border);\n  border-radius:8px; padding:5px 7px 5px 11px; font-size:13px; font-weight:600; color:var(--text);\n}\n.sa-chip button{\n  width:20px; height:20px; border:none; border-radius:6px; cursor:pointer;\n  background:var(--danger-soft); color:var(--danger);\n  display:flex; align-items:center; justify-content:center;\n}\n.sa-group{ padding:12px 0; border-bottom:1px solid var(--border); }\n.sa-group:last-child{ border-bottom:none; }\n\n/* ============================================================\n   MANAGEMENT ROWS (admin)\n   ============================================================ */\n.mgmt-row{\n  display:flex; align-items:center; gap:11px;\n  padding:11px 0; border-bottom:1px solid var(--border);\n}\n.mgmt-row:last-of-type{ border-bottom:none; }\n.sq{\n  width:38px; height:38px; flex:0 0 auto; border-radius:10px;\n  border:1px solid var(--border-strong); background:var(--surface);\n  color:var(--text-2); cursor:pointer; display:flex; align-items:center; justify-content:center;\n  transition:.15s;\n}\n.sq:active{ transform:scale(.93); }\n.sq:disabled{ opacity:.4; cursor:default; }\n.sq.ok{ border-color:var(--success); color:var(--success); background:var(--success-soft); }\n.sq.danger{ border-color:var(--danger); color:var(--danger); background:var(--danger-soft); }\n\n/* ============================================================\n   LOGIN\n   ============================================================ */\n.login{\n  position:absolute; inset:0; display:flex; flex-direction:column;\n  background:\n    linear-gradient(180deg, var(--primary-700) 0%, var(--primary) 46%, #0d5570 100%);\n  color:#fff; overflow:hidden;\n}\n.login .lg-deco{ position:absolute; inset:0; opacity:.5; pointer-events:none; }\n.login .lg-top{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;\n  padding:40px 32px 10px; position:relative; z-index:2; }\n.login .lg-logo{\n  width:74px; height:74px; border-radius:22px; margin-bottom:22px;\n  background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.2);\n  display:flex; align-items:center; justify-content:center;\n  backdrop-filter:blur(8px); box-shadow:var(--shadow-lg);\n}\n.login .lg-kicker{ font-size:11px; letter-spacing:.22em; text-transform:uppercase;\n  color:rgba(255,255,255,.7); font-weight:600; margin-bottom:8px; }\n.login .lg-title{ font-size:30px; font-weight:800; letter-spacing:-.02em; text-align:center; line-height:1.1; }\n.login .lg-tag{ font-size:13px; color:rgba(255,255,255,.62); margin-top:10px; text-align:center; }\n.login .lg-card{\n  position:relative; z-index:2; background:var(--surface); color:var(--text);\n  border-radius:26px 26px 0 0; padding:26px 24px calc(28px + env(safe-area-inset-bottom));\n  box-shadow:0 -10px 40px rgba(0,0,0,.25);\n}\n.login .lg-card h3{ font-size:18px; font-weight:700; margin:0 0 4px; }\n.login .lg-card p{ font-size:13px; color:var(--text-2); margin:0 0 20px; }\n.login .lg-hint{ font-size:11.5px; color:var(--text-3); text-align:center; margin-top:14px; }\n";
+  document.head.appendChild(style);
+})();
+
+
+/* ═══════════════════ BACKEND (Google Sheets) ═══════════════════ */
+
+/* ─────────── Keys & tab mapping (unchanged + 2 new) ─────────── */
 const STORAGE_KEY  = "qg_reports_v8";
 const ENG_KEY      = "qg_engineering_v8";
 const USERS_KEY    = "qg_users_v8";
 const CHAT_KEY     = "qg_chat_v8";
 const TARGETS_KEY  = "qg_targets_v8";
-const ADMIN_USER  = "Serkan";
-const GUEST_USER  = "Guest";
-const SUPERVISORS = ["Arun", "Asim", "Botan", "Alkan", "Serkan", "Supervisor01", "Supervisor02", "Supervisor03"];
-const ALL_USERS   = [...SUPERVISORS, GUEST_USER];
-const AREAS       = ["North-A", "North-B", "SLC", "South"];
-const DEFAULT_PASSWORDS = { Arun:"arun01", Asim:"asim01", Botan:"botan01", Alkan:"alkan01", Serkan:"643844", Supervisor01:"sup0101", Supervisor02:"sup0201", Supervisor03:"sup0301", Guest:"guest01" };
+const AREAS_KEY    = "qg_areas_v8";
+const SETTINGS_KEY = "qg_settings_v8";
 
-const GAS_URL  = "https://script.google.com/macros/s/AKfycbwMu8pzZrJ2zTQcf4qa8Iewdeh_XTcHMAfsyUeZMrAI1NCsBmU9lhK_eaaLRhBJh4nX/exec";
+const ADMIN_USER = "Serkan";
+const GUEST_USER = "Guest";
 
-// Clean short ID: e.g. "R-20260416-A3F2"
-function makeId(prefix="R") {
+/* Fallback roster/passwords — used only if the Users sheet is empty */
+const DEFAULT_PASSWORDS = {
+  Arun:"arun01", Asim:"asim01", Botan:"botan01", Alkan:"alkan01",
+  Serkan:"643844", Supervisor01:"sup0101", Supervisor02:"sup0201", Supervisor03:"sup0301",
+  Guest:"guest01"
+};
+const DEFAULT_AREAS = ["North-A", "North-B", "SLC", "South"];
+const DEFAULT_PROJECT = { name:"Site Follow-Up", kicker:"TR Qatar · EPC_04 Piping", company:"EPC_04 Piping" };
+
+/* ⚠️ Same web-app URL as your current app */
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwMu8pzZrJ2zTQcf4qa8Iewdeh_XTcHMAfsyUeZMrAI1NCsBmU9lhK_eaaLRhBJh4nX/exec";
+
+const TAB_MAP = {
+  [STORAGE_KEY]:  "Reports",
+  [ENG_KEY]:      "Engineering",
+  [USERS_KEY]:    "Users",
+  [CHAT_KEY]:     "Chat",
+  [TARGETS_KEY]:  "Targets",
+  [AREAS_KEY]:    "Areas",
+  [SETTINGS_KEY]: "Settings",
+};
+
+/* ─────────── Helpers (unchanged) ─────────── */
+function makeId(prefix="R"){
   const d = new Date();
   const date = d.toISOString().slice(0,10).replace(/-/g,"");
   const rand = Math.random().toString(36).slice(2,6).toUpperCase();
   return `${prefix}-${date}-${rand}`;
 }
-
-// Format ISO to "16 Apr 2026 14:32"
-function fmtDT(iso) {
-  if (!iso) return "";
-  try {
-    const d = new Date(iso);
-    return d.toLocaleString("en-GB", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" });
-  } catch { return iso; }
+function fmtDT(iso){
+  if(!iso) return "";
+  try{ return new Date(iso).toLocaleString("en-GB",{ day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" }); }
+  catch{ return iso; }
 }
-
-// Human-readable for Sheets: "16/04/2026 20:45"
-function fmtForSheet() {
-  const d = new Date();
-  const pad = n => String(n).padStart(2,"0");
+function fmtForSheet(){
+  const d = new Date(), pad = n => String(n).padStart(2,"0");
   return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
+const todayStr = () => new Date().toISOString().split("T")[0];
 
-const TAB_MAP = {
-  [STORAGE_KEY]: "Reports",
-  [ENG_KEY]:     "Engineering",
-  [USERS_KEY]:   "Users",
-  [CHAT_KEY]:    "Chat",
-  [TARGETS_KEY]: "Targets"
-};
-
-async function gasCall(params) {
-  try {
+/* ─────────── Core GAS calls (unchanged) ─────────── */
+async function gasCall(params){
+  try{
     const qs = Object.entries(params).map(([k,v])=>`${k}=${encodeURIComponent(v)}`).join("&");
     const res = await fetch(`${GAS_URL}?${qs}`);
     return await res.json();
-  } catch(e) { console.error("GAS error:", e); return null; }
+  }catch(e){ console.error("GAS error:", e); return null; }
 }
 
-async function sget(key) {
-  try {
+async function sget(key){
+  try{
     const data = await gasCall({ action:"get", tab: TAB_MAP[key] });
-    if (key === USERS_KEY) {
-      // Start with defaults, override with sheet values
+    if(key === USERS_KEY){
       const merged = { ...DEFAULT_PASSWORDS };
-      if (Array.isArray(data) && data.length) {
-        data.forEach(r => { if (r.name) merged[r.name] = r.password; });
-      }
+      if(Array.isArray(data) && data.length) data.forEach(r => { if(r.name) merged[r.name] = r.password; });
       return merged;
     }
     return Array.isArray(data) ? data : [];
-  } catch { return null; }
+  }catch{ return null; }
 }
 
-async function sappend(key, newRows) {
-  try {
+async function sappend(key, newRows){
+  try{
     const rows = Array.isArray(newRows) ? newRows : [newRows];
-    const clean = key === ENG_KEY
-      ? rows.map(r => ({ ...r, photos: [] }))
-      : rows;
+    const clean = key === ENG_KEY ? rows.map(r => ({ ...r, photos: [] })) : rows;
     await gasCall({ action:"append", tab: TAB_MAP[key], data: JSON.stringify(clean) });
-  } catch(e) { console.error("append error:", e); }
+  }catch(e){ console.error("append error:", e); }
 }
 
-async function sset(key, data) {
-  try {
+async function sset(key, data){
+  try{
     let rows = data;
-    if (key === USERS_KEY) {
-      rows = Object.entries(data).map(([name,password]) => ({ name, password }));
-    }
+    if(key === USERS_KEY) rows = Object.entries(data).map(([name,password]) => ({ name, password }));
     await gasCall({ action:"set", tab: TAB_MAP[key], data: JSON.stringify(rows) });
-  } catch(e) { console.error("sset error:", e); }
+  }catch(e){ console.error("sset error:", e); }
 }
 
-async function sdelete(key, id) {
-  try {
-    await gasCall({ action:"delete", tab: TAB_MAP[key], id });
-  } catch(e) { console.error("delete error:", e); }
+async function sdelete(key, id){
+  try{ await gasCall({ action:"delete", tab: TAB_MAP[key], id }); }
+  catch(e){ console.error("delete error:", e); }
 }
 
-async function supdateStatus(id, status, resolvedAt) {
-  try {
-    await gasCall({ action:"update_status", tab:"Engineering", id, status, resolvedAt: resolvedAt||"" });
-  } catch(e) { console.error("status error:", e); }
+async function supdateStatus(id, status, resolvedAt){
+  try{ await gasCall({ action:"update_status", tab:"Engineering", id, status, resolvedAt: resolvedAt||"" }); }
+  catch(e){ console.error("status error:", e); }
 }
 
-function compressImage(file) {
+/* ─────────── Image compression (unchanged) ─────────── */
+function compressImage(file){
   return new Promise(res => {
     const reader = new FileReader();
     reader.onload = e => {
@@ -122,1031 +142,1462 @@ function compressImage(file) {
   });
 }
 
-function exportCSV(rows, isEng=false) {
-  const h = isEng ? ["Date","Area","Sub-Area","Status","Description"] : ["Date","Supervisor","Area","Sub-Area","Welder","Pipe Fitter","Total Manpower","Job Description"];
-  const lines = [h.join(","), ...rows.map(r => isEng
-    ? [r.date,r.area,r.subArea||"",r.status||"open",`"${(r.description||"").replace(/"/g,'""')}"`].join(",")
-    : [r.date,r.supervisor,r.area,r.subArea||"",r.welder,r.pipeFitter,r.totalManpower,`"${(r.jobDescription||"").replace(/"/g,'""')}"`].join(",")
-  )];
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(new Blob([lines.join("\n")],{type:"text/csv"}));
-  a.download=`Report_${new Date().toISOString().split("T")[0]}.csv`;
-  a.click();
+/* ════════════════════════════════════════════════════════════
+   AREAS + SUB-AREAS  (new "Areas" tab: columns area, subArea)
+   Rows: one per (area, subArea). An area with no sub-areas is
+   stored as a single row with subArea = "".
+   ════════════════════════════════════════════════════════════ */
+async function loadAreas(records){
+  let rows = null;
+  try{ rows = await gasCall({ action:"get", tab:"Areas" }); }catch{ rows = null; }
+
+  const areas = [];
+  const subAreas = {};
+  const addArea = a => { if(a && !areas.includes(a)){ areas.push(a); subAreas[a] = subAreas[a]||[]; } };
+  const addSub  = (a,s) => { if(!a) return; addArea(a); if(s && !subAreas[a].includes(s)) subAreas[a].push(s); };
+
+  if(Array.isArray(rows) && rows.length){
+    rows.forEach(r => addSub(r.area, r.subArea));
+  } else {
+    DEFAULT_AREAS.forEach(addArea);
+  }
+  /* Always merge in anything already present in real records, so the
+     picker never misses an area/sub-area someone has used. */
+  (records || []).forEach(r => { if(r.area) addSub(r.area, r.subArea && r.subArea !== "-" ? r.subArea : ""); });
+
+  return { areas, subAreas };
 }
 
-function exportTargetCSV(rows) {
-  const h = ["Date","Supervisor","Area","Welding (Dia/In)","Fit-Up (Dia/In)","TP Completion (No.)"];
-  const lines = [h.join(","), ...rows.map(r =>
-    [r.date,r.supervisor,r.area,r.weldTarget||"-",r.fitUpTarget||"-",r.tpCompletion||"-"].join(",")
-  )];
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(new Blob([lines.join("\n")],{type:"text/csv"}));
-  a.download=`Targets_${new Date().toISOString().split("T")[0]}.csv`;
-  a.click();
+async function saveAreas(areas, subAreas){
+  const rows = [];
+  areas.forEach(a => {
+    const subs = subAreas[a] || [];
+    if(subs.length) subs.forEach(s => rows.push({ area:a, subArea:s }));
+    else rows.push({ area:a, subArea:"" });
+  });
+  try{ await gasCall({ action:"set", tab:"Areas", data: JSON.stringify(rows) }); }
+  catch(e){ console.error("saveAreas error:", e); }
 }
 
-const C = {
-  bg:"#0d1117", surface:"#161b22", border:"#30363d",
-  accent:"#f0811a", text:"#e6edf3", muted:"#8b949e",
-  success:"#2ea043", successBg:"#0f2d1a",
-  danger:"#f85149", dangerBg:"#2d0f0f",
-  eng:"#58a6ff", engBg:"#0d1f38",
-  resolved:"#3fb950", resolvedBg:"#0f2d1a",
-  altRow:"#111820", headBg:"#1c2128",
-  chat:"#1c2128"
+/* ════════════════════════════════════════════════════════════
+   PROJECT IDENTITY  (new "Settings" tab: columns key, value)
+   ════════════════════════════════════════════════════════════ */
+async function loadProject(){
+  let rows = null;
+  try{ rows = await gasCall({ action:"get", tab:"Settings" }); }catch{ rows = null; }
+  const p = { ...DEFAULT_PROJECT };
+  if(Array.isArray(rows)) rows.forEach(r => { if(r.key && r.key in p) p[r.key] = r.value; });
+  return p;
+}
+async function saveProject(project){
+  const rows = Object.entries(project).map(([key,value]) => ({ key, value }));
+  try{ await gasCall({ action:"set", tab:"Settings", data: JSON.stringify(rows) }); }
+  catch(e){ console.error("saveProject error:", e); }
+}
+
+/* ─────────── Avatar colors ─────────── */
+const AVATAR_COLORS = {
+  Arun:"#E0622E", Asim:"#1E8E5A", Botan:"#7A5AE0", Alkan:"#C9820B",
+  Serkan:"#0E4D64", Supervisor01:"#2B6CB0", Supervisor02:"#C0397B", Supervisor03:"#0F8A8A", Guest:"#5C6B80"
+};
+const PALETTE = ["#E0622E","#1E8E5A","#7A5AE0","#C9820B","#0E4D64","#2B6CB0","#C0397B","#0F8A8A","#9B4DCA","#D14343","#3A7D44","#B5651D"];
+function colorFor(name){
+  if(!name) return "#5C6B80";
+  if(AVATAR_COLORS[name]) return AVATAR_COLORS[name];
+  let h = 0; for(const c of name) h = (h*31 + c.charCodeAt(0)) >>> 0;
+  return PALETTE[h % PALETTE.length];
+}
+
+/* ─────────── Empty form factories ─────────── */
+const emptyForm   = (sup="") => ({ date:todayStr(), supervisor:sup, area:"", subArea:"", welder:"", pipeFitter:"", jobDescription:"" });
+const emptyTarget = (sup="") => ({ date:todayStr(), supervisor:sup, area:"", weldTarget:"", fitUpTarget:"", tpCompletion:"" });
+const emptyEng    = () => ({ date:todayStr(), area:"", subArea:"", description:"", photos:[] });
+
+/* ─────────── CSV ─────────── */
+function downloadCSV(rows, head, mapRow, name){
+  const lines = [head.join(","), ...rows.map(r => mapRow(r).map(c=>`"${String(c??"").replace(/"/g,'""')}"`).join(","))];
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([lines.join("\n")], { type:"text/csv" }));
+  a.download = `${name}_${todayStr()}.csv`; a.click();
+}
+
+/* ═══════════════════ UI COMPONENTS ═══════════════════ */
+/* ---- Inline SVG icon set (stroke, 24px) ---- */
+const ICONS = {
+  report:'<path d="M9 3h6a2 2 0 0 1 2 2v0H7v0a2 2 0 0 1 2-2Z"/><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 11h6M9 15h4"/>',
+  target:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/>',
+  eng:'<path d="M10.3 3.3a2 2 0 0 1 3.4 0l7 12.1a2 2 0 0 1-1.7 3H5a2 2 0 0 1-1.7-3Z"/><path d="M12 9v4M12 17h.01"/>',
+  summary:'<path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/>',
+  chat:'<path d="M21 12a8 8 0 0 1-11.5 7.2L4 21l1.8-5.5A8 8 0 1 1 21 12Z"/>',
+  records:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/>',
+  lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  logout:'<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l5-5-5-5M15 12H3"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 0 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H1a2 2 0 0 1 0-4h.1A1.6 1.6 0 0 0 2.6 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H7a1.6 1.6 0 0 0 1-1.5V1a2 2 0 0 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V7a1.6 1.6 0 0 0 1.5 1H23a2 2 0 0 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  camera:'<path d="M14.5 4h-5L8 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-4Z"/><circle cx="12" cy="13" r="4"/>',
+  trash:'<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>',
+  send:'<path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/>',
+  download:'<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>',
+  x:'<path d="M18 6 6 18M6 6l12 12"/>',
+  filter:'<path d="M3 5h18M6 12h12M10 19h4"/>',
+  bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/>',
+  reopen:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/>',
+  key:'<circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 8.2-8.2M16 5l3 3M18 7l2-2"/>',
+  flame:'<path d="M12 2s5 4 5 9a5 5 0 0 1-10 0c0-2 1-3 1-3s0 2 2 2c0-3 2-5 2-8Z"/>',
 };
 
-const inp = (x={}) => ({ width:"100%", padding:"10px 14px", background:C.bg, border:`1px solid ${C.border}`, borderRadius:6, color:C.text, fontSize:14, outline:"none", boxSizing:"border-box", fontFamily:"'Courier New',monospace", ...x });
-const LBL = { display:"block", fontSize:11, fontWeight:700, letterSpacing:"0.1em", color:C.muted, textTransform:"uppercase", marginBottom:6 };
-const todayStr = () => new Date().toISOString().split("T")[0];
-const emptyForm    = (sup="") => ({ date:todayStr(), supervisor:sup, area:"", subArea:"", welder:"", pipeFitter:"", jobDescription:"" });
-const emptyTarget  = (sup="") => ({ date:todayStr(), supervisor:sup, area:"", weldTarget:"", fitUpTarget:"", tpCompletion:"" });
-const emptyEng     = () => ({ date:todayStr(), area:"", subArea:"", description:"", photos:[] });
-
-/* Avatar color per user */
-const AVATAR_COLORS = { Arun:"#e05c2a", Asim:"#2ea043", Botan:"#a371f7", Alkan:"#e3b341", Serkan:"#f0811a", Supervisor01:"#58a6ff", Supervisor02:"#f778ba", Supervisor03:"#39d353" };
-function Avatar({ name, size=32 }) {
-  return <div style={{ width:size, height:size, borderRadius:"50%", background:AVATAR_COLORS[name]||C.muted, display:"flex", alignItems:"center", justifyContent:"center", fontSize:size*0.4, fontWeight:700, color:"#fff", flexShrink:0 }}>{name[0]}</div>;
+function Icon({ name, size=22, stroke=2, color="currentColor", style }){
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round"
+      style={style} dangerouslySetInnerHTML={{ __html: ICONS[name] || "" }} />
+  );
 }
 
-function Stat({ label, value, color }) {
+function Avatar({ name, size=34 }){
   return (
-    <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:8, padding:"14px 12px", textAlign:"center" }}>
-      <div style={{ fontSize:24, fontWeight:700, color:color||C.accent }}>{value}</div>
-      <div style={{ fontSize:10, color:C.muted, letterSpacing:"0.08em", textTransform:"uppercase", marginTop:4 }}>{label}</div>
+    <div className="avatar" style={{ width:size, height:size, fontSize:size*0.42, background:colorFor(name) }}>
+      {(name||"?")[0]}
     </div>
   );
 }
 
-function EngCard({ issue, onToggle }) {
-  const [lb,setLb]=useState(null);
-  const isRes=issue.status==="resolved";
+function Stat({ label, value, tone }){
   return (
-    <div style={{ background:isRes?C.resolvedBg:C.engBg, border:`1px solid ${isRes?C.resolved+"55":C.eng+"44"}`, borderRadius:10, padding:"14px 16px", marginBottom:10, transition:"all 0.2s" }}>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:10, marginBottom:10 }}>
-        <div style={{ display:"flex", gap:8, flexWrap:"wrap", alignItems:"center" }}>
-          <span style={{ fontSize:11, color:C.accent }}>{issue.date}</span>
-          <span style={{ background:C.headBg, border:`1px solid ${C.border}`, borderRadius:4, padding:"1px 8px", fontSize:11 }}>{issue.area}</span>
-          {issue.subArea&&issue.subArea!=="-"&&<span style={{ color:C.eng, fontSize:11 }}>↳ {issue.subArea}</span>}
-          <span style={{ background:isRes?C.resolvedBg:C.dangerBg, border:`1px solid ${isRes?C.resolved:C.danger}`, color:isRes?C.resolved:C.danger, borderRadius:10, padding:"1px 10px", fontSize:10, fontWeight:700 }}>
-            {isRes?"✔ RESOLVED":"⚠ OPEN"}
-          </span>
-          <span style={{ fontSize:10, color:C.muted }}>#{issue.id}</span>
-        </div>
-        {onToggle&&<button onClick={()=>onToggle(issue.id)} style={{ padding:"5px 14px", borderRadius:6, cursor:"pointer", fontSize:11, fontWeight:700, fontFamily:"'Courier New',monospace", whiteSpace:"nowrap", background:isRes?C.dangerBg:C.resolvedBg, color:isRes?C.danger:C.resolved, border:`1px solid ${isRes?C.danger:C.resolved}` }}>{isRes?"↩ Reopen":"✔ Resolve"}</button>}
-      </div>
-      <div style={{ fontSize:13, color:C.text, lineHeight:1.7, whiteSpace:"pre-wrap", marginBottom:isRes||issue.photos?.length?10:0 }}>{issue.description}</div>
-      {isRes && issue.resolvedAt && (
-        <div style={{ display:"flex", alignItems:"center", gap:8, background:"rgba(46,160,67,0.08)", border:`1px solid ${C.resolved}44`, borderRadius:6, padding:"7px 12px", marginBottom:issue.photos?.length?10:0 }}>
-          <span style={{ color:C.resolved, fontSize:12 }}>✅ Resolved</span>
-          <span style={{ color:C.muted, fontSize:11 }}>{fmtDT(issue.resolvedAt)}</span>
-        </div>
-      )}
-      {issue.photos?.length>0&&<div style={{ display:"flex", gap:8, flexWrap:"wrap", marginTop:8 }}>{issue.photos.map((ph,i)=><img key={i} src={ph} onClick={()=>setLb(ph)} style={{ width:72, height:72, objectFit:"cover", borderRadius:6, border:`1px solid ${C.border}`, cursor:"zoom-in" }} />)}</div>}
-      {lb&&<div onClick={()=>setLb(null)} style={{ position:"fixed", inset:0, background:"#000c", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center" }}><img src={lb} style={{ maxWidth:"90vw", maxHeight:"90vh", borderRadius:8 }} /><div style={{ position:"absolute", top:20, right:28, color:"#fff", fontSize:28, cursor:"pointer" }}>✕</div></div>}
+    <div className={"stat" + (tone ? " "+tone : "")}>
+      <div className="sv tnum">{value}</div>
+      <div className="sl">{label}</div>
     </div>
   );
 }
 
-/* ══════════════════════════ CHAT ══════════════════════════ */
-function ChatPanel({ session }) {
-  const [messages, setMessages] = useState([]);
-  const [text, setText]         = useState("");
-  const [loading, setLoading]   = useState(true);
-  const bottomRef               = useRef();
-  const pollRef                 = useRef();
-
-  const fetchMessages = async () => {
-    const data = await sget(CHAT_KEY);
-    if (data && Array.isArray(data)) setMessages(data);
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchMessages();
-    pollRef.current = setInterval(fetchMessages, 5000); // poll every 5s
-    return () => clearInterval(pollRef.current);
-  }, []);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior:"smooth" });
-  }, [messages]);
-
-  const send = async () => {
-    const t = text.trim();
-    if (!t) return;
-    const msg = { id:makeId("C"), author:session.name, text:t, ts:new Date().toISOString() };
-    setMessages(p=>[...p, msg]);
-    await sappend(CHAT_KEY, [msg]);
-    setText("");
-  };
-
-  const formatTime = ts => fmtDT(ts);
-
-  // Group consecutive messages by same author
-  const grouped = messages.reduce((acc, msg, i) => {
-    const prev = messages[i-1];
-    const sameAuthor = prev && prev.author === msg.author && (new Date(msg.ts)-new Date(prev.ts)) < 5*60*1000;
-    acc.push({ ...msg, showHeader: !sameAuthor });
-    return acc;
-  }, []);
-
+function Lightbox({ src, onClose }){
+  if(!src) return null;
   return (
-    <div style={{ display:"flex", flexDirection:"column", height:"calc(100vh - 160px)", background:C.surface, border:`1px solid ${C.border}`, borderRadius:10, overflow:"hidden" }}>
-      {/* Chat header */}
-      <div style={{ padding:"14px 18px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", gap:10 }}>
-        <div style={{ fontSize:16 }}>💬</div>
-        <div>
-          <div style={{ fontWeight:700, fontSize:13 }}>Team Chat</div>
-          <div style={{ fontSize:10, color:C.muted }}>TR Qatar EPC_04 Piping · {SUPERVISORS.length} members</div>
-        </div>
-        <div style={{ marginLeft:"auto", display:"flex", gap:6 }}>
-          {SUPERVISORS.map(s=><Avatar key={s} name={s} size={24} />)}
-        </div>
-      </div>
+    <div className="lightbox" onClick={onClose}>
+      <img src={src} alt="" />
+      <button className="lx-close" onClick={onClose}><Icon name="x" size={20} /></button>
+    </div>
+  );
+}
 
-      {/* Messages */}
-      <div style={{ flex:1, overflowY:"auto", padding:"16px 18px" }}>
-        {loading && <div style={{ textAlign:"center", color:C.muted, fontSize:13 }}>Loading...</div>}
-        {!loading && messages.length===0 && (
-          <div style={{ textAlign:"center", color:C.muted, fontSize:13, marginTop:40 }}>
-            No messages yet. Say hello! 👋
-          </div>
-        )}
-        {grouped.map((msg) => {
-          const isMe = msg.author === session.name;
-          return (
-            <div key={msg.id} style={{ marginBottom: msg.showHeader ? 16 : 4, display:"flex", flexDirection:"column", alignItems:isMe?"flex-end":"flex-start" }}>
-              {msg.showHeader && (
-                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6, flexDirection:isMe?"row-reverse":"row" }}>
-                  <Avatar name={msg.author} size={28} />
-                  <div style={{ display:"flex", alignItems:"baseline", gap:8, flexDirection:isMe?"row-reverse":"row" }}>
-                    <span style={{ fontSize:12, fontWeight:700, color:AVATAR_COLORS[msg.author]||C.muted }}>{msg.author}</span>
-                    <span style={{ fontSize:10, color:C.muted }}>{formatTime(msg.ts)}</span>
-                  </div>
-                </div>
-              )}
-              <div style={{
-                maxWidth:"72%", padding:"9px 14px",
-                background:isMe?C.accent:C.headBg,
-                color:isMe?"#000":C.text,
-                borderRadius:isMe?"14px 14px 4px 14px":"14px 14px 14px 4px",
-                fontSize:13, lineHeight:1.6,
-                marginLeft:isMe?0:36, marginRight:isMe?36:0,
-                wordBreak:"break-word"
-              }}>{msg.text}</div>
-            </div>
-          );
-        })}
-        <div ref={bottomRef} />
+function EngCard({ issue, onToggle, isAdmin }){
+  const [lb, setLb] = useState(null);
+  const res = issue.status === "resolved";
+  return (
+    <div className={"eng " + (res ? "resolved" : "open")}>
+      <div className="eng-meta">
+        <span className="eng-date">{issue.date}</span>
+        <span className="chip area">{issue.area}</span>
+        {issue.subArea && issue.subArea !== "-" &&
+          <span style={{ fontSize:11, color:"var(--text-3)" }}>↳ {issue.subArea}</span>}
+        <span className={"pill " + (res ? "resolved" : "open")}>
+          {res ? "✓ Resolved" : "● Open"}
+        </span>
+        <span className="eng-id tnum">#{issue.id}</span>
       </div>
+      <div className="eng-desc">{issue.description}</div>
+      {res && issue.resolvedAt &&
+        <div className="resolved-stamp">
+          <Icon name="check" size={15} /> Resolved · {issue.resolvedAt}
+        </div>}
+      {issue.photos && issue.photos.length > 0 &&
+        <div className="eng-photos">
+          {issue.photos.map((ph,i) => <img key={i} src={ph} onClick={()=>setLb(ph)} alt="" />)}
+        </div>}
+      {onToggle && isAdmin &&
+        <button className={"btn btn-sm " + (res ? "btn-ghost" : "btn-success")}
+          style={{ marginTop:12 }} onClick={()=>onToggle(issue.id)}>
+          {res ? <><Icon name="reopen" size={14} /> Reopen</> : <><Icon name="check" size={14} /> Mark resolved</>}
+        </button>}
+      <Lightbox src={lb} onClose={()=>setLb(null)} />
+    </div>
+  );
+}
 
-      {/* Input */}
-      <div style={{ padding:"12px 18px", borderTop:`1px solid ${C.border}`, display:"flex", gap:10, alignItems:"flex-end" }}>
-        <Avatar name={session.name} size={32} />
-        <textarea
-          value={text}
-          onChange={e=>setText(e.target.value)}
-          onKeyDown={e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); send(); } }}
-          rows={1}
-          placeholder="Type a message... (Enter to send, Shift+Enter for new line)"
-          style={{ ...inp({ padding:"10px 14px", resize:"none", flex:1, fontSize:13, lineHeight:1.5 }) }}
-        />
-        <button onClick={send} disabled={!text.trim()} style={{ padding:"10px 18px", background:text.trim()?C.accent:"#2a2a2a", color:text.trim()?"#000":C.muted, border:"none", borderRadius:8, cursor:text.trim()?"pointer":"default", fontSize:13, fontWeight:700, fontFamily:"'Courier New',monospace", whiteSpace:"nowrap", transition:"all 0.15s" }}>
-          Send ↗
+function TopBar({ session, project, openCount, onProfile, onRecords, onBell }){
+  return (
+    <div className="topbar">
+      <div className="brand-mark"><Icon name="flame" size={20} /></div>
+      <div className="t-titles">
+        <span className="t-kicker">{project.kicker}</span>
+        <span className="t-title">{project.name}</span>
+      </div>
+      <div className="t-actions">
+        <button className="iconbtn" onClick={onBell}>
+          <Icon name="bell" size={19} />
+          {openCount > 0 && <span className="dot">{openCount}</span>}
+        </button>
+        {session.isAdmin &&
+          <button className="iconbtn" onClick={onRecords}><Icon name="records" size={19} /></button>}
+        <button className="iconbtn" style={{ padding:0, overflow:"hidden" }} onClick={onProfile}>
+          <Avatar name={session.name} size={40} />
         </button>
       </div>
     </div>
   );
 }
 
-/* ══════════════════════════ MAIN ══════════════════════════ */
-export default function App() {
-  const [session, setSession] = useState(null);
-  const [users, setUsers]     = useState(null);
-  const [loginName, setLoginName] = useState("");
-  const [loginPw, setLoginPw]     = useState("");
-  const [loginErr, setLoginErr]   = useState("");
-
-  const [reports, setReports]       = useState([]);
-  const [engIssues, setEngIssues]   = useState([]);
-  const [targets, setTargets]       = useState([]);
-  const [loading, setLoading]       = useState(true);
-
-  const [tab, setTab]   = useState("report");
-  const [flash, setFlash] = useState("");
-
-  const [staged, setStaged] = useState([]);
-  const [form, setForm]     = useState(emptyForm());
-  const [addErr, setAddErr] = useState("");
-  const [supErr, setSupErr] = useState("");
-
-  const [stagedEng, setStagedEng] = useState([]);
-  const [engForm, setEngForm]     = useState(emptyEng());
-  const [addEngErr, setAddEngErr] = useState("");
-  const [engFilter, setEngFilter] = useState("all");
-  const photoRef = useRef();
-
-  const [targetForm, setTargetForm]     = useState(emptyTarget());
-  const [stagedTargets, setStagedTargets] = useState([]);
-  const [targetErr, setTargetErr]       = useState("");
-
-  const [fSup, setFSup]   = useState("All");
-  const [fArea, setFArea] = useState("All");
-  const [fDate, setFDate] = useState("");
-  const [expanded, setExpanded] = useState(null);
-  const [sumDate, setSumDate]   = useState(todayStr());
-  const [pwEdit, setPwEdit]     = useState({});
-  const [pwSaved, setPwSaved]   = useState("");
-
-  useEffect(() => {
-    (async () => {
-      const [r,e,u,t] = await Promise.all([sget(STORAGE_KEY),sget(ENG_KEY),sget(USERS_KEY),sget(TARGETS_KEY)]);
-      setReports(r||[]); setEngIssues(e||[]); setTargets(t||[]);
-      if (u) { setUsers(u); } else { await sset(USERS_KEY,DEFAULT_PASSWORDS); setUsers(DEFAULT_PASSWORDS); }
-      setLoading(false);
-    })();
-  }, []);
-
-  const showFlash = msg => { setFlash(msg); setTimeout(()=>setFlash(""),3000); };
-
-  const handleLogin = () => {
-    if (!loginName) { setLoginErr("Please select your name."); return; }
-    if (!users) { setLoginErr("Loading..."); return; }
-    if (users[loginName]===loginPw) {
-      const isAdmin = loginName===ADMIN_USER;
-      const isGuest = loginName===GUEST_USER;
-      setSession({ name:loginName, isAdmin, isGuest });
-      setLoginErr("");
-      setForm(emptyForm(loginName));
-      setTargetForm(emptyTarget(loginName));
-      // Guest goes straight to summary
-      if (isGuest) setTab("summary");
-    } else { setLoginErr("❌ Incorrect password."); setLoginPw(""); }
-  };
-
-  const savePasswords = async () => {
-    const updated = { ...users };
-    Object.entries(pwEdit).forEach(([n,p])=>{ if(p.trim()) updated[n]=p.trim(); });
-    await sset(USERS_KEY, updated);
-    setUsers(updated); setPwEdit({});
-    setPwSaved("✅ Passwords updated."); setTimeout(()=>setPwSaved(""),3000);
-  };
-
-  /* Report */
-  const sf = (f,v) => {
-    // Lock supervisor to own name for non-admin
-    if (f==="supervisor" && !session?.isAdmin && v !== session?.name) {
-      setSupErr(`You can only submit reports under your own name (${session?.name}).`);
-      setTimeout(()=>setSupErr(""),3000);
-      return;
-    }
-    setSupErr("");
-    setForm(p=>({...p,[f]:v}));
-  };
-
-  const addEntry = () => {
-    const { date, supervisor, area, subArea, welder, pipeFitter, jobDescription } = form;
-    if (!session?.isAdmin && supervisor !== session?.name) { setAddErr(`You can only submit as ${session?.name}.`); return; }
-    if (!date||!supervisor||!area||welder===""||pipeFitter===""||!jobDescription) { setAddErr("Please fill in all required (*) fields."); return; }
-    // Double submit warning — same supervisor+area+subArea+date
-    if (isDuplicate(supervisor, area, subArea, date)) {
-      if (!window.confirm(`⚠️ ${supervisor} already has an entry for ${area}${subArea?` / ${subArea}`:""} on ${date}. Add another?`)) return;
-    }
-    setAddErr("");
-    setStaged(p=>[...p,{ id:makeId("R"), date, supervisor, area, subArea:subArea||"-", welder:parseInt(welder)||0, pipeFitter:parseInt(pipeFitter)||0, totalManpower:(parseInt(welder)||0)+(parseInt(pipeFitter)||0), jobDescription }]);
-    setForm(p=>({...p, area:"", subArea:"", welder:"", pipeFitter:"", jobDescription:""}));
-  };
-
-  const submitAll = async () => {
-    if (!staged.length) return;
-    const now = fmtForSheet();
-    const newEntries = staged.map(e=>({...e, submittedAt:now}));
-    await sappend(STORAGE_KEY, newEntries);
-    setReports(p=>[...p, ...newEntries]);
-    setStaged([]); setForm(emptyForm(session?.name));
-    showFlash("✅ All entries submitted!");
-  };
-
-  /* Target handlers */
-  const st = (f,v) => setTargetForm(p=>({...p,[f]:v}));
-  const addTarget = () => {
-    const {date,supervisor,area,weldTarget,fitUpTarget,tpCompletion}=targetForm;
-    if (!session?.isAdmin && supervisor!==session?.name) { setTargetErr(`You can only submit targets as ${session?.name}.`); return; }
-    if (!date||!supervisor||!area) { setTargetErr("Please fill Date, Supervisor and Area."); return; }
-    setTargetErr("");
-    setStagedTargets(p=>[...p,{id:makeId("T"),date,supervisor,area,weldTarget:weldTarget||"-",fitUpTarget:fitUpTarget||"-",tpCompletion:tpCompletion||"-"}]);
-    setTargetForm(p=>({...p,area:"",weldTarget:"",fitUpTarget:"",tpCompletion:""}));
-  };
-  const submitAllTargets = async () => {
-    if (!stagedTargets.length) return;
-    const now = fmtForSheet();
-    const newEntries = stagedTargets.map(e=>({...e, submittedAt:now}));
-    await sappend(TARGETS_KEY, newEntries);
-    setTargets(p=>[...p, ...newEntries]);
-    setStagedTargets([]); setTargetForm(emptyTarget(session?.name));
-    showFlash("✅ Targets submitted!");
-  };
-
-  /* Eng */
-  const se = (f,v) => setEngForm(p=>({...p,[f]:v}));
-  const handlePhotoAdd = async e => {
-    const comp=await Promise.all(Array.from(e.target.files).map(compressImage));
-    setEngForm(p=>({...p,photos:[...(p.photos||[]),...comp]}));
-    e.target.value="";
-  };
-  const addEng = () => {
-    const {date,area,description}=engForm;
-    if (!date||!area||!description) { setAddEngErr("Please fill in all required (*) fields."); return; }
-    setAddEngErr("");
-    setStagedEng(p=>[...p,{id:makeId("E"),date,area,subArea:engForm.subArea||"-",description,photos:engForm.photos||[],status:"open"}]);
-    setEngForm(p=>({...p,area:"",subArea:"",description:"",photos:[]}));
-  };
-  const submitAllEng = async () => {
-    if (!stagedEng.length) return;
-    const now = fmtForSheet();
-    const newEntries = stagedEng.map(e=>({...e, submittedAt:now}));
-    await sappend(ENG_KEY, newEntries);
-    setEngIssues(p=>[...p, ...newEntries]);
-    setStagedEng([]); setEngForm(emptyEng());
-    showFlash("✅ Engineering issues submitted!");
-  };
-  const toggleResolve = async id => {
-    const issue = engIssues.find(e=>e.id===id);
-    if (!issue) return;
-    const newStatus = issue.status==="resolved" ? "open" : "resolved";
-    const resolvedAt = newStatus==="resolved" ? fmtForSheet() : "";
-    const updated = engIssues.map(e => e.id===id ? {...e, status:newStatus, resolvedAt} : e);
-    setEngIssues(updated);
-    await supdateStatus(id, newStatus, resolvedAt);
-  };
-
-  // Delete a report entry (supervisor: own today only; admin: any)
-  const deleteReport = async (id) => {
-    if (!window.confirm("Delete this entry?")) return;
-    setReports(p=>p.filter(r=>r.id!==id));
-    await sdelete(STORAGE_KEY, id);
-    showFlash("🗑 Entry deleted.");
-  };
-
-  // Double submit check — same supervisor+area+subArea+date already submitted?
-  const isDuplicate = (supervisor, area, subArea, date) =>
-    reports.some(r => r.supervisor===supervisor && r.area===area && r.date===date &&
-      (r.subArea||"-")===(subArea||"-"));
-
-  const fReports = reports.filter(r=>(fSup==="All"||r.supervisor===fSup)&&(fArea==="All"||r.area===fArea)&&(!fDate||r.date===fDate)).sort((a,b)=>b.date.localeCompare(a.date));
-  const fEng = engIssues.filter(r=>(fArea==="All"||r.area===fArea)&&(!fDate||r.date===fDate)&&(engFilter==="all"||(r.status||"open")===engFilter)).sort((a,b)=>b.date.localeCompare(a.date));
-  const openCount = engIssues.filter(e=>(e.status||"open")==="open").length;
-
-  const sumReports = reports.filter(r=>r.date===sumDate);
-  const sumEng = engIssues.filter(r=>r.date===sumDate);
-  const areaMap = {};
-  sumReports.forEach(r=>{
-    if (!areaMap[r.area]) areaMap[r.area]={welder:0,pipeFitter:0,total:0,entries:[]};
-    areaMap[r.area].welder+=r.welder; areaMap[r.area].pipeFitter+=r.pipeFitter; areaMap[r.area].total+=r.totalManpower; areaMap[r.area].entries.push(r);
-  });
-  const openOnDate = engIssues.filter(e=>{
-    const sub=(e.submittedAt||e.date).slice(0,10);
-    if (sub>sumDate) return false;
-    if ((e.status||"open")==="open") return true;
-    return e.resolvedAt && e.resolvedAt.slice(0,10)>sumDate;
-  });
-
-  const Tab = ({id,label,color,badge}) => (
-    <button onClick={()=>setTab(id)} style={{ padding:"8px 16px", background:tab===id?(color||C.accent):"transparent", color:tab===id?(color?C.text:"#000"):C.muted, border:`1px solid ${tab===id?(color||C.accent):C.border}`, borderRadius:4, cursor:"pointer", fontSize:11, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", fontFamily:"'Courier New',monospace", transition:"all 0.15s" }}>
-      {label}{badge>0&&<span style={{ marginLeft:6,background:C.danger,color:"#fff",borderRadius:10,padding:"0 6px",fontSize:10 }}>{badge}</span>}
-    </button>
-  );
-
-  /* ── LOGIN ── */
-  if (!session) return (
-    <div style={{ minHeight:"100vh", background:"#0e0a06", color:C.text, fontFamily:"'Courier New',monospace", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:20, position:"relative", overflow:"hidden" }}>
-
-      {/* Evening sky - warm amber horizon */}
-      <div style={{ position:"absolute", inset:0, background:"linear-gradient(180deg, #08090f 0%, #160e06 42%, #2e1b07 58%, #3a2008 68%, #1e1006 80%, #0e0a06 100%)", zIndex:0 }} />
-
-      {/* Setting sun glow behind towers */}
-      <div style={{ position:"absolute", bottom:"36%", left:"52%", width:110, height:110, borderRadius:"50%", background:"radial-gradient(circle, rgba(255,190,70,0.5) 0%, rgba(255,120,20,0.25) 45%, transparent 70%)", zIndex:1 }} />
-
-      {/* Horizon warmth band */}
-      <div style={{ position:"absolute", bottom:"32%", left:0, right:0, height:70, background:"linear-gradient(180deg, transparent 0%, rgba(160,70,10,0.2) 50%, rgba(200,100,20,0.3) 80%, transparent 100%)", zIndex:1 }} />
-
-      {/* A few stars - early evening */}
-      {[[8,10],[18,5],[72,8],[88,4],[94,13],[47,3],[62,6],[30,8]].map(([l,t],i)=>(
-        <div key={i} style={{ position:"absolute", width:1.5, height:1.5, borderRadius:"50%", background:"#fff", opacity:0.4, top:`${t}%`, left:`${l}%`, zIndex:1 }} />
-      ))}
-
-      {/* ── REFINERY SCENE ── */}
-      <div style={{ position:"absolute", bottom:0, left:0, right:0, height:340, zIndex:2 }}>
-
-        {/* Ground */}
-        <div style={{ position:"absolute", bottom:0, left:0, right:0, height:30, background:"linear-gradient(180deg,#1c1106,#110b04)", borderTop:"1px solid #3a2208" }} />
-        {/* Ground amber reflections */}
-        <div style={{ position:"absolute", bottom:2, left:"3%", width:110, height:10, background:"radial-gradient(ellipse, rgba(220,120,20,0.3) 0%, transparent 70%)", borderRadius:"50%" }} />
-        <div style={{ position:"absolute", bottom:2, left:"56%", width:80, height:8, background:"radial-gradient(ellipse, rgba(200,100,15,0.22) 0%, transparent 70%)", borderRadius:"50%" }} />
-
-        {/* Tower 1 - main tall distillation */}
-        <div style={{ position:"absolute", bottom:30, left:"12%", width:36, height:235, background:"linear-gradient(90deg,#1e1208,#2c1e0c,#1e1208)", border:"1px solid #4a2e10", borderRadius:"3px 3px 0 0", boxShadow:"4px 0 24px rgba(200,100,15,0.1)" }}>
-          {[40,85,130,175,210].map(t=><div key={t} style={{ position:"absolute", top:t, left:-10, right:-10, height:7, background:"#130c04", border:"1px solid #3a2208", borderRadius:2 }} />)}
-          {[58,103,148].map(t=><div key={t} style={{ position:"absolute", top:t, left:7, width:6, height:4, background:"rgba(255,170,50,0.65)", borderRadius:1, boxShadow:"0 0 7px rgba(255,150,30,0.9)" }} />)}
-          <div style={{ position:"absolute", top:-24, left:9, width:18, height:24, background:"#1e1208", borderRadius:"50% 50% 0 0", border:"1px solid #4a2e10" }} />
-          <div style={{ position:"absolute", top:-40, left:2, width:32, height:20, borderRadius:"50%", background:"radial-gradient(ellipse, rgba(255,160,40,0.7) 0%, rgba(255,80,10,0.35) 55%, transparent 75%)" }} />
-        </div>
-
-        {/* Flare stack left - big warm flame */}
-        <div style={{ position:"absolute", bottom:30, left:"5%", width:8, height:190, background:"linear-gradient(90deg,#1a1008,#241808)", borderRadius:"4px 4px 0 0" }}>
-          <div style={{ position:"absolute", top:-38, left:-14, width:36, height:40, borderRadius:"50%", background:"radial-gradient(circle, #ffe066 0%, #ffaa00 30%, #ff6600 55%, transparent 78%)", opacity:0.95 }} />
-          <div style={{ position:"absolute", top:-56, left:-7, width:22, height:26, borderRadius:"50%", background:"radial-gradient(circle, rgba(255,220,100,0.75) 0%, rgba(255,130,30,0.35) 55%, transparent 75%)" }} />
-          <div style={{ position:"absolute", top:-68, left:-2, width:13, height:18, borderRadius:"50%", background:"radial-gradient(circle, rgba(255,240,160,0.45) 0%, transparent 70%)" }} />
-          <div style={{ position:"absolute", top:0, left:-6, right:-6, height:70, background:"linear-gradient(180deg, rgba(255,140,20,0.12) 0%, transparent 100%)" }} />
-        </div>
-
-        {/* Flare stack right */}
-        <div style={{ position:"absolute", bottom:30, right:"8%", width:6, height:215, background:"linear-gradient(90deg,#1a1008,#241808)", borderRadius:"4px 4px 0 0" }}>
-          <div style={{ position:"absolute", top:-28, left:-10, width:26, height:28, borderRadius:"50%", background:"radial-gradient(circle, #ffd044 0%, #ff9900 35%, #ff5500 60%, transparent 80%)", opacity:0.9 }} />
-          <div style={{ position:"absolute", top:-42, left:-4, width:15, height:20, borderRadius:"50%", background:"radial-gradient(circle, rgba(255,200,80,0.6) 0%, transparent 70%)" }} />
-        </div>
-
-        {/* Storage tanks */}
-        <div style={{ position:"absolute", bottom:30, right:"15%" }}>
-          <div style={{ width:74, height:60, background:"linear-gradient(135deg,#2c1c0a,#1e1208,#2c1c0a)", border:"1px solid #4e3012", borderRadius:"3px 3px 0 0" }}>
-            <div style={{ height:10, background:"linear-gradient(90deg,#3e2610,#4e3415,#3e2610)", borderRadius:"3px 3px 0 0", borderBottom:"1px solid #4e3012" }} />
-            <div style={{ position:"absolute", top:0, right:0, width:22, height:"100%", background:"linear-gradient(90deg,transparent,rgba(240,130,30,0.1))", borderRadius:"0 3px 0 0" }} />
-          </div>
-          <div style={{ position:"absolute", top:-10, right:-46, width:60, height:48, background:"linear-gradient(135deg,#2c1c0a,#1e1208)", border:"1px solid #4e3012", borderRadius:"3px 3px 0 0" }}>
-            <div style={{ height:8, background:"linear-gradient(90deg,#3e2610,#4e3415,#3e2610)", borderRadius:"3px 3px 0 0", borderBottom:"1px solid #4e3012" }} />
-          </div>
-          <div style={{ position:"absolute", top:16, left:7, width:5, height:5, borderRadius:"50%", background:"#ff4400", boxShadow:"0 0 9px rgba(255,80,0,1)" }} />
-        </div>
-
-        {/* Tower 2 */}
-        <div style={{ position:"absolute", bottom:30, right:"28%", width:28, height:178, background:"linear-gradient(90deg,#1e1208,#2c1e0c,#1e1208)", border:"1px solid #4a2e10", borderRadius:"3px 3px 0 0" }}>
-          {[35,78,122].map(t=><div key={t} style={{ position:"absolute", top:t, left:-7, right:-7, height:6, background:"#130c04", border:"1px solid #3a2208", borderRadius:2 }} />)}
-          {[52,97].map(t=><div key={t} style={{ position:"absolute", top:t, right:5, width:5, height:3, background:"rgba(255,160,40,0.6)", borderRadius:1, boxShadow:"0 0 6px rgba(255,140,20,0.8)" }} />)}
-          <div style={{ position:"absolute", top:-18, left:7, width:14, height:18, background:"#1e1208", borderRadius:"50% 50% 0 0", border:"1px solid #4a2e10" }} />
-        </div>
-
-        {/* Foreground pipe rack */}
-        <div style={{ position:"absolute", bottom:63, left:0, right:0, height:11, background:"linear-gradient(180deg,#5a3818,#3a2210,#1e1208)", borderTop:"1px solid #7a5228", borderBottom:"1px solid #0e0804" }} />
-        <div style={{ position:"absolute", bottom:58, left:0, right:0, height:6, background:"linear-gradient(180deg,#2e1c0a,#1a1006)", borderTop:"1px solid #4a2e10" }} />
-        {[8,18,30,42,55,67,80,92].map((pct,i)=>(
-          <div key={i} style={{ position:"absolute", bottom:30, left:`${pct}%`, width:6, height:34, background:"#130c04", border:"1px solid #2a1808" }}>
-            <div style={{ position:"absolute", bottom:0, left:-4, width:14, height:5, background:"#130c04", border:"1px solid #2a1808" }} />
-          </div>
-        ))}
-        {[15,25,35,50,62,74,86].map((pct,i)=>(
-          <div key={i} style={{ position:"absolute", bottom:57, left:`${pct}%`, width:5, height:18, background:"#7a4820", borderRadius:1 }} />
-        ))}
-
-        {/* Upper pipe */}
-        <div style={{ position:"absolute", bottom:95, left:"10%", right:"20%", height:8, background:"linear-gradient(180deg,#4a2e12,#281808)", borderTop:"1px solid #6a4018", borderBottom:"1px solid #0e0804" }} />
-        {[15,28,42,56,70,84].map((pct,i)=>(
-          <div key={i} style={{ position:"absolute", bottom:93, left:`${pct}%`, width:4, height:30, background:"#130c04", border:"1px solid #1e1208" }} />
-        ))}
-
-        {/* Welding arc - bright, warm */}
-        <div style={{ position:"absolute", bottom:69, left:"38%" }}>
-          <div style={{ width:10, height:10, borderRadius:"50%", background:"#fffff0", boxShadow:"0 0 8px 5px rgba(255,250,200,0.95), 0 0 18px 10px rgba(255,200,80,0.65), 0 0 38px 16px rgba(255,120,20,0.35)" }} />
-          {[[9,-7],[13,2],[7,11],[-5,11],[-11,2],[-9,-8],[3,-13],[15,-5]].map(([dx,dy],i)=>(
-            <div key={i} style={{ position:"absolute", top:5+dy*0.6, left:5+dx*0.6, width:i%3===0?3:2, height:i%3===0?3:2, borderRadius:"50%", background:i%2===0?"#ffff99":"#ffbb00", opacity:0.92 }} />
-          ))}
-          <div style={{ position:"absolute", top:-22, left:-32, width:74, height:22, background:"radial-gradient(ellipse, rgba(255,210,90,0.18) 0%, transparent 70%)" }} />
-        </div>
-
-        {/* Worker silhouettes */}
-        <div style={{ position:"absolute", bottom:63, left:"34.5%" }}>
-          <div style={{ width:10, height:13, background:"#0a0704", borderRadius:"50% 50% 0 0", marginLeft:2 }} />
-          <div style={{ width:14, height:19, background:"#0a0704", borderRadius:2 }} />
-        </div>
-        <div style={{ position:"absolute", bottom:63, left:"46%" }}>
-          <div style={{ width:9, height:11, background:"#0a0704", borderRadius:"50% 50% 0 0", marginLeft:1 }} />
-          <div style={{ width:12, height:17, background:"#0a0704", borderRadius:2 }} />
-        </div>
-
-        {/* Crane silhouette */}
-        <div style={{ position:"absolute", bottom:30, left:"58%", width:10, height:255, background:"linear-gradient(90deg,#150f06,#201608,#150f06)", borderRadius:"2px 2px 0 0" }}>
-          {[212,168,126,84,42].map(t=>(
-            <div key={t} style={{ position:"absolute", top:t, left:0, right:0, borderTop:"1px solid #3a2808", opacity:0.7 }}>
-              <div style={{ position:"absolute", top:0, left:0, width:"100%", height:42, borderLeft:"1px solid #3a2808", opacity:0.5, transform:"skewX(45deg)", transformOrigin:"bottom left" }} />
-            </div>
-          ))}
-        </div>
-        <div style={{ position:"absolute", bottom:273, left:"30%", width:"30%", height:6, background:"linear-gradient(180deg,#3a2510,#201408)", transform:"rotate(-4deg)", transformOrigin:"right center", borderRadius:3 }} />
-        <div style={{ position:"absolute", bottom:210, left:"40%", width:2, height:65, background:"#2a1808" }} />
-        <div style={{ position:"absolute", bottom:184, left:"38%", width:8, height:10, border:"2px solid #4a2e12", borderRadius:"0 0 50% 50%", borderTop:"none" }} />
-
-        {/* Warm scene tint */}
-        <div style={{ position:"absolute", inset:0, background:"linear-gradient(0deg, rgba(90,42,8,0.25) 0%, rgba(70,30,5,0.12) 50%, transparent 100%)", pointerEvents:"none" }} />
-      </div>
-
-      {/* Soft bottom fade */}
-      <div style={{ position:"absolute", bottom:0, left:0, right:0, height:110, background:"linear-gradient(0deg, rgba(14,10,6,0.65) 0%, transparent 100%)", zIndex:3 }} />
-
-      {/* Content */}
-      <div style={{ position:"relative", zIndex:10, display:"flex", flexDirection:"column", alignItems:"center", width:"100%", maxWidth:420 }}>
-        <div style={{ textAlign:"center", marginBottom:28 }}>
-          <div style={{ fontSize:10, letterSpacing:"0.28em", color:C.accent, textTransform:"uppercase", marginBottom:8, opacity:0.9 }}>TR Qatar EPC_04 Piping</div>
-          <div style={{ fontSize:30, fontWeight:700, letterSpacing:"0.08em", textShadow:"0 0 30px rgba(240,129,26,0.4)" }}>DAILY REPORT</div>
-          <div style={{ width:60, height:2, background:`linear-gradient(90deg, transparent, ${C.accent}, transparent)`, margin:"12px auto" }} />
-          <div style={{ fontSize:10, color:"rgba(230,237,243,0.28)", letterSpacing:"0.14em", fontStyle:"italic" }}>created by Serkan</div>
-        </div>
-        <div style={{ width:"100%", background:"rgba(18,12,6,0.9)", border:`1px solid rgba(180,90,20,0.3)`, borderRadius:12, padding:32, backdropFilter:"blur(8px)", boxShadow:"0 0 40px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,160,60,0.07)" }}>
-          <div style={{ fontSize:11, fontWeight:700, letterSpacing:"0.14em", color:C.muted, textTransform:"uppercase", marginBottom:22, textAlign:"center" }}>— Sign In —</div>
-          {loginErr&&<div style={{ background:C.dangerBg,border:`1px solid ${C.danger}`,borderRadius:6,padding:"9px 14px",marginBottom:14,color:C.danger,fontSize:13 }}>{loginErr}</div>}
-          <div style={{ marginBottom:16 }}>
-            <label style={LBL}>Name</label>
-            <select value={loginName} onChange={e=>{setLoginName(e.target.value);setLoginErr("");}} style={{ ...inp(),cursor:"pointer" }}>
-              <option value="">— Select —</option>
-              {ALL_USERS.map(s=><option key={s}>{s}</option>)}
-            </select>
-          </div>
-          <div style={{ marginBottom:22 }}>
-            <label style={LBL}>Password</label>
-            <input type="password" value={loginPw} onChange={e=>{setLoginPw(e.target.value);setLoginErr("");}} onKeyDown={e=>e.key==="Enter"&&handleLogin()} placeholder="Enter your password" style={inp()} />
-          </div>
-          <button onClick={handleLogin} style={{ width:"100%", padding:13, background:`linear-gradient(135deg, ${C.accent}, #c16714)`, color:"#000", border:"none", borderRadius:6, fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:"'Courier New',monospace", letterSpacing:"0.12em", textTransform:"uppercase", boxShadow:`0 0 20px rgba(240,129,26,0.35)` }}>Sign In →</button>
-          {loading&&<div style={{ textAlign:"center",marginTop:12,color:C.muted,fontSize:12 }}>Loading...</div>}
-        </div>
-      </div>
-    </div>
-  );
-
-  /* ── MAIN ── */
+function BottomNav({ tab, setTab, items }){
   return (
-    <div style={{ minHeight:"100vh", background:C.bg, color:C.text, fontFamily:"'Courier New',monospace" }}>
-      <div style={{ background:C.surface, borderBottom:`2px solid ${C.accent}`, padding:"12px 24px", display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12 }}>
-        <div>
-          <div style={{ fontSize:10, letterSpacing:"0.22em", color:C.accent, textTransform:"uppercase", marginBottom:2 }}>TR Qatar EPC_04 Piping</div>
-          <div style={{ fontSize:20, fontWeight:700, letterSpacing:"0.04em" }}>DAILY REPORT</div>
-        </div>
-        <div style={{ display:"flex", gap:8, flexWrap:"wrap", alignItems:"center" }}>
-          {!session.isGuest && <Tab id="report" label="📝 Report" />}
-          {!session.isGuest && <Tab id="target" label="🎯 Target" color="#58a6ff" />}
-          {!session.isGuest && <Tab id="engineering" label="⚠️ Engineering" color={C.eng} badge={openCount} />}
-          <Tab id="summary" label="📊 Summary" />
-          {!session.isGuest && <Tab id="chat" label="💬 Chat" color="#6e40c9" />}
-          {session.isAdmin && <Tab id="records" label="🔒 Records" />}
-          <div style={{ marginLeft:8, display:"flex", alignItems:"center", gap:8 }}>
-            <Avatar name={session.name} size={28} />
-            <span style={{ fontSize:11, color:C.muted }}>{session.name}</span>
-            <button onClick={()=>{setSession(null);setLoginPw("");setTab("report");}} style={{ padding:"4px 10px", background:"transparent", border:`1px solid ${C.border}`, color:C.muted, borderRadius:4, cursor:"pointer", fontSize:10, fontFamily:"'Courier New',monospace" }}>Sign out</button>
-          </div>
-        </div>
-      </div>
+    <nav className="bottomnav">
+      {items.map(it => (
+        <button key={it.id} className={"navitem" + (tab===it.id ? " active" : "")}
+          onClick={()=>setTab(it.id)}>
+          <span className="ni-ico"><Icon name={it.icon} size={23} stroke={tab===it.id?2.4:2} /></span>
+          {it.label}
+          {it.badge > 0 && <span className="ni-badge">{it.badge}</span>}
+        </button>
+      ))}
+    </nav>
+  );
+}
 
-      <div style={{ maxWidth:880, margin:"0 auto", padding:"24px 20px" }}>
-        {flash&&<div style={{ background:C.successBg,border:`1px solid ${C.success}`,borderRadius:8,padding:"11px 16px",marginBottom:18,color:"#3fb950",fontSize:14 }}>{flash}</div>}
-
-        {/* ══ REPORT ══ */}
-        {tab==="report"&&(
-          <div>
-            {staged.length>0&&(
-              <div style={{ background:C.surface,border:`1px solid ${C.accent}55`,borderRadius:10,padding:18,marginBottom:22 }}>
-                <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14 }}>
-                  <span style={{ fontSize:11,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em" }}>⏳ Pending <span style={{ background:C.accent,color:"#000",borderRadius:10,padding:"1px 8px",marginLeft:6 }}>{staged.length}</span></span>
-                  <button onClick={submitAll} style={{ padding:"8px 18px",background:C.success,color:"#fff",border:"none",borderRadius:6,cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"'Courier New',monospace" }}>✔ Submit All to Records</button>
-                </div>
-                <div style={{ overflowX:"auto" }}>
-                  <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
-                    <thead><tr style={{ borderBottom:`1px solid ${C.border}` }}>{["Date","Supervisor","Area","Sub-Area","W","PF","Total","Job Desc",""].map(h=><th key={h} style={{ padding:"6px 10px",textAlign:"left",fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase" }}>{h}</th>)}</tr></thead>
-                    <tbody>{staged.map((e,i)=>(
-                      <tr key={e.id} style={{ borderBottom:`1px solid ${C.border}33`,background:i%2?C.altRow:"transparent" }}>
-                        <td style={{ padding:"7px 10px",color:C.accent }}>{e.date}</td>
-                        <td style={{ padding:"7px 10px",fontWeight:700 }}>{e.supervisor}</td>
-                        <td style={{ padding:"7px 10px" }}><span style={{ background:C.headBg,border:`1px solid ${C.border}`,borderRadius:4,padding:"2px 6px",fontSize:11 }}>{e.area}</span></td>
-                        <td style={{ padding:"7px 10px",color:C.muted }}>{e.subArea}</td>
-                        <td style={{ padding:"7px 10px",textAlign:"center" }}>{e.welder}</td>
-                        <td style={{ padding:"7px 10px",textAlign:"center" }}>{e.pipeFitter}</td>
-                        <td style={{ padding:"7px 10px",textAlign:"center",fontWeight:700,color:C.accent }}>{e.totalManpower}</td>
-                        <td style={{ padding:"7px 10px",textAlign:"center",color:"#58a6ff" }}>{e.weldTarget}</td>
-                        <td style={{ padding:"7px 10px",textAlign:"center",color:"#58a6ff" }}>{e.fitUpTarget}</td>
-                        <td style={{ padding:"7px 10px",textAlign:"center",color:"#58a6ff" }}>{e.tpCompletion}</td>
-                        <td style={{ padding:"7px 10px",color:C.muted,maxWidth:130 }}><div style={{ overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{e.jobDescription}</div></td>
-                        <td style={{ padding:"7px 10px" }}><button onClick={()=>setStaged(p=>p.filter(x=>x.id!==e.id))} style={{ background:C.dangerBg,border:`1px solid ${C.danger}`,color:C.danger,borderRadius:4,padding:"2px 8px",cursor:"pointer",fontSize:11,fontFamily:"'Courier New',monospace" }}>✕</button></td>
-                      </tr>
-                    ))}</tbody>
-                  </table>
-                </div>
-                <div style={{ marginTop:10,display:"flex",gap:20,padding:"8px 10px",background:"#0a0e13",borderRadius:6 }}>
-                  <span style={{ fontSize:12,color:C.muted }}>Welder: <strong style={{ color:C.text }}>{staged.reduce((s,e)=>s+e.welder,0)}</strong></span>
-                  <span style={{ fontSize:12,color:C.muted }}>Pipe Fitter: <strong style={{ color:C.text }}>{staged.reduce((s,e)=>s+e.pipeFitter,0)}</strong></span>
-                  <span style={{ fontSize:12,color:C.muted }}>Total MP: <strong style={{ color:C.accent }}>{staged.reduce((s,e)=>s+e.totalManpower,0)}</strong></span>
-                </div>
-              </div>
-            )}
-
-            <div style={{ background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:26 }}>
-              <div style={{ fontSize:11,fontWeight:700,letterSpacing:"0.12em",color:C.muted,textTransform:"uppercase",marginBottom:18 }}>+ Add Area Entry</div>
-              {addErr&&<div style={{ background:C.dangerBg,border:`1px solid ${C.danger}`,borderRadius:6,padding:"9px 14px",marginBottom:14,color:C.danger,fontSize:13 }}>{addErr}</div>}
-              {supErr&&<div style={{ background:C.dangerBg,border:`1px solid ${C.danger}`,borderRadius:6,padding:"9px 14px",marginBottom:14,color:C.danger,fontSize:13 }}>🔒 {supErr}</div>}
-
-              <div style={{ marginBottom:16 }}><label style={LBL}>Date <span style={{ color:C.accent }}>*</span></label><input type="date" value={form.date} onChange={e=>sf("date",e.target.value)} style={inp()} /></div>
-
-              <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16 }}>
-                <div>
-                  <label style={LBL}>Supervisor <span style={{ color:C.accent }}>*</span></label>
-                  {session.isAdmin
-                    ? <select value={form.supervisor} onChange={e=>sf("supervisor",e.target.value)} style={{ ...inp(),cursor:"pointer" }}><option value="">— Select —</option>{SUPERVISORS.map(s=><option key={s}>{s}</option>)}</select>
-                    : <div style={{ ...inp(),display:"flex",alignItems:"center",gap:10,borderColor:C.accent+"55" }}>
-                        <Avatar name={session.name} size={22} />
-                        <span style={{ fontWeight:700 }}>{session.name}</span>
-                        <span style={{ marginLeft:"auto",fontSize:10,color:C.muted }}>🔒 locked</span>
-                      </div>
-                  }
-                </div>
-                <div><label style={LBL}>Area <span style={{ color:C.accent }}>*</span></label><select value={form.area} onChange={e=>sf("area",e.target.value)} style={{ ...inp(),cursor:"pointer" }}><option value="">— Select —</option>{AREAS.map(a=><option key={a}>{a}</option>)}</select></div>
-              </div>
-
-              <div style={{ marginBottom:16 }}><label style={LBL}>Sub-Area</label><input type="text" value={form.subArea} onChange={e=>sf("subArea",e.target.value)} placeholder="e.g. PR-01, PR-02, Deluge-01" style={inp()} /></div>
-
-              <div style={{ background:"#0a0e13",border:`1px solid ${C.border}`,borderRadius:8,padding:16,marginBottom:16 }}>
-                <div style={{ fontSize:11,fontWeight:700,letterSpacing:"0.12em",color:C.accent,textTransform:"uppercase",marginBottom:14 }}>⚙ Manpower</div>
-                <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14 }}>
-                  <div><label style={LBL}>Welder <span style={{ color:C.accent }}>*</span></label><input type="number" min="0" value={form.welder} onChange={e=>sf("welder",e.target.value)} placeholder="0" style={inp()} /></div>
-                  <div><label style={LBL}>Pipe Fitter <span style={{ color:C.accent }}>*</span></label><input type="number" min="0" value={form.pipeFitter} onChange={e=>sf("pipeFitter",e.target.value)} placeholder="0" style={inp()} /></div>
-                  <div><label style={LBL}>Total</label><div style={{ ...inp(),display:"flex",alignItems:"center",color:C.accent,fontWeight:700,fontSize:24,borderColor:C.accent+"55" }}>{(parseInt(form.welder)||0)+(parseInt(form.pipeFitter)||0)}</div></div>
-                </div>
-              </div>
-
-              <div style={{ marginBottom:20 }}><label style={LBL}>Job Description <span style={{ color:C.accent }}>*</span></label><textarea value={form.jobDescription} onChange={e=>sf("jobDescription",e.target.value)} rows={5} placeholder="Describe work performed in this area / sub-area..." style={{ ...inp(),resize:"vertical" }} /></div>
-
-              <button onClick={addEntry} style={{ width:"100%",padding:13,background:"transparent",color:C.accent,border:`2px solid ${C.accent}`,borderRadius:6,fontSize:13,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",cursor:"pointer",fontFamily:"'Courier New',monospace",marginBottom:staged.length?10:0 }}>+ Add This Area Entry</button>
-              {staged.length>0&&<button onClick={submitAll} style={{ width:"100%",padding:13,background:C.success,color:"#fff",border:"none",borderRadius:6,fontSize:13,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",cursor:"pointer",fontFamily:"'Courier New',monospace" }}>✔ Submit All {staged.length} {staged.length===1?"Entry":"Entries"} to Records</button>}
-            </div>
-
-            {/* ── MY TODAY'S SUBMITTED ENTRIES ── */}
-            {(()=>{
-              const myToday = reports.filter(r => r.supervisor===session.name && r.date===todayStr());
-              if (!myToday.length) return null;
-              return (
-                <div style={{ marginTop:22, background:C.surface, border:`1px solid ${C.border}`, borderRadius:10, padding:18 }}>
-                  <div style={{ fontSize:11,fontWeight:700,letterSpacing:"0.12em",color:C.muted,textTransform:"uppercase",marginBottom:14 }}>
-                    📋 My Submitted Entries Today ({myToday.length})
-                  </div>
-                  {myToday.map((r,i)=>(
-                    <div key={r.id} style={{ background:i%2?C.altRow:C.headBg, border:`1px solid ${C.border}`, borderRadius:8, padding:"12px 14px", marginBottom:8, display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12 }}>
-                      <div style={{ flex:1 }}>
-                        <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginBottom:6 }}>
-                          <span style={{ background:C.headBg, border:`1px solid ${C.border}`, borderRadius:4, padding:"2px 8px", fontSize:11, fontWeight:700 }}>{r.area}</span>
-                          {r.subArea&&r.subArea!=="-"&&<span style={{ color:C.muted, fontSize:11 }}>↳ {r.subArea}</span>}
-                          <span style={{ fontSize:11, color:C.accent }}>W:{r.welder} PF:{r.pipeFitter} Total:{r.totalManpower}</span>
-                          <span style={{ fontSize:10, color:C.muted }}>{r.submittedAt}</span>
-                        </div>
-                        <div style={{ fontSize:12, color:C.muted }}>{r.jobDescription}</div>
-                      </div>
-                      <button onClick={()=>deleteReport(r.id)} style={{ background:C.dangerBg, border:`1px solid ${C.danger}`, color:C.danger, borderRadius:6, padding:"5px 12px", cursor:"pointer", fontSize:11, fontWeight:700, fontFamily:"'Courier New',monospace", whiteSpace:"nowrap" }}>
-                        🗑 Delete
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              );
-            })()}
-          </div>
-        )}
-
-        {/* ══ TARGET ══ */}
-        {tab==="target"&&(
-          <div>
-            {stagedTargets.length>0&&(
-              <div style={{ background:C.surface,border:`1px solid #58a6ff55`,borderRadius:10,padding:18,marginBottom:22 }}>
-                <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14 }}>
-                  <span style={{ fontSize:11,fontWeight:700,color:"#58a6ff",textTransform:"uppercase",letterSpacing:"0.1em" }}>⏳ Pending Targets <span style={{ background:"#58a6ff",color:"#000",borderRadius:10,padding:"1px 8px",marginLeft:6 }}>{stagedTargets.length}</span></span>
-                  <button onClick={submitAllTargets} style={{ padding:"8px 18px",background:C.success,color:"#fff",border:"none",borderRadius:6,cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"'Courier New',monospace" }}>✔ Submit All Targets</button>
-                </div>
-                <div style={{ overflowX:"auto" }}>
-                  <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
-                    <thead><tr style={{ borderBottom:`1px solid ${C.border}` }}>{["Date","Supervisor","Area","Weld (Dia/In)","Fit-Up (Dia/In)","TP No.",""].map(h=><th key={h} style={{ padding:"6px 10px",textAlign:"left",fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase" }}>{h}</th>)}</tr></thead>
-                    <tbody>{stagedTargets.map((e,i)=>(
-                      <tr key={e.id} style={{ borderBottom:`1px solid ${C.border}33`,background:i%2?C.altRow:"transparent" }}>
-                        <td style={{ padding:"7px 10px",color:C.accent }}>{e.date}</td>
-                        <td style={{ padding:"7px 10px",fontWeight:700 }}>{e.supervisor}</td>
-                        <td style={{ padding:"7px 10px" }}><span style={{ background:C.headBg,border:`1px solid ${C.border}`,borderRadius:4,padding:"2px 6px",fontSize:11 }}>{e.area}</span></td>
-                        <td style={{ padding:"7px 10px",textAlign:"center",color:"#58a6ff" }}>{e.weldTarget}"</td>
-                        <td style={{ padding:"7px 10px",textAlign:"center",color:"#58a6ff" }}>{e.fitUpTarget}"</td>
-                        <td style={{ padding:"7px 10px",textAlign:"center",color:"#58a6ff" }}>{e.tpCompletion}</td>
-                        <td style={{ padding:"7px 10px" }}><button onClick={()=>setStagedTargets(p=>p.filter(x=>x.id!==e.id))} style={{ background:C.dangerBg,border:`1px solid ${C.danger}`,color:C.danger,borderRadius:4,padding:"2px 8px",cursor:"pointer",fontSize:11,fontFamily:"'Courier New',monospace" }}>✕</button></td>
-                      </tr>
-                    ))}</tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            <div style={{ background:C.surface,border:`1px solid #58a6ff44`,borderRadius:10,padding:26 }}>
-              <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:18 }}>
-                <div style={{ width:3,height:22,background:"#58a6ff",borderRadius:2 }} />
-                <span style={{ fontSize:11,fontWeight:700,letterSpacing:"0.12em",color:"#58a6ff",textTransform:"uppercase" }}>Set Area Target</span>
-              </div>
-              {targetErr&&<div style={{ background:C.dangerBg,border:`1px solid ${C.danger}`,borderRadius:6,padding:"9px 14px",marginBottom:14,color:C.danger,fontSize:13 }}>{targetErr}</div>}
-
-              <div style={{ marginBottom:16 }}><label style={LBL}>Date <span style={{ color:"#58a6ff" }}>*</span></label><input type="date" value={targetForm.date} onChange={e=>st("date",e.target.value)} style={inp()} /></div>
-
-              <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16 }}>
-                <div>
-                  <label style={LBL}>Supervisor <span style={{ color:"#58a6ff" }}>*</span></label>
-                  {session.isAdmin
-                    ? <select value={targetForm.supervisor} onChange={e=>st("supervisor",e.target.value)} style={{ ...inp(),cursor:"pointer" }}><option value="">— Select —</option>{SUPERVISORS.map(s=><option key={s}>{s}</option>)}</select>
-                    : <div style={{ ...inp(),display:"flex",alignItems:"center",gap:10,borderColor:"#58a6ff55" }}><Avatar name={session.name} size={22} /><span style={{ fontWeight:700 }}>{session.name}</span><span style={{ marginLeft:"auto",fontSize:10,color:C.muted }}>🔒 locked</span></div>
-                  }
-                </div>
-                <div>
-                  <label style={LBL}>Area <span style={{ color:"#58a6ff" }}>*</span></label>
-                  <select value={targetForm.area} onChange={e=>st("area",e.target.value)} style={{ ...inp(),cursor:"pointer" }}>
-                    <option value="">— Select —</option>
-                    {AREAS.map(a=><option key={a}>{a}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              {/* Auto-show manpower already assigned to this area today */}
-              {targetForm.area && (()=>{
-                const areaReports = reports.filter(r=>r.date===targetForm.date&&r.area===targetForm.area);
-                const totalW = areaReports.reduce((s,r)=>s+r.welder,0);
-                const totalPF = areaReports.reduce((s,r)=>s+r.pipeFitter,0);
-                const sups = [...new Set(areaReports.map(r=>r.supervisor))].join(", ")||"—";
-                return (
-                  <div style={{ background:"#0a1628",border:`1px solid #2a3d52`,borderRadius:8,padding:14,marginBottom:16,display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14 }}>
-                    <div style={{ textAlign:"center" }}>
-                      <div style={{ fontSize:10,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4 }}>Welder Assigned</div>
-                      <div style={{ fontSize:22,fontWeight:700,color:C.accent }}>{totalW||"—"}</div>
-                    </div>
-                    <div style={{ textAlign:"center" }}>
-                      <div style={{ fontSize:10,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4 }}>Pipe Fitter Assigned</div>
-                      <div style={{ fontSize:22,fontWeight:700,color:C.accent }}>{totalPF||"—"}</div>
-                    </div>
-                    <div style={{ textAlign:"center" }}>
-                      <div style={{ fontSize:10,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4 }}>Supervisor(s)</div>
-                      <div style={{ fontSize:13,fontWeight:700,color:C.text }}>{sups}</div>
-                    </div>
-                    {areaReports.length===0&&<div style={{ gridColumn:"1/-1",textAlign:"center",color:C.muted,fontSize:12 }}>No manpower submitted for {targetForm.area} on {targetForm.date} yet.</div>}
-                  </div>
-                );
-              })()}
-
-              <div style={{ background:"#0a0e13",border:`1px solid #2a3d52`,borderRadius:8,padding:16,marginBottom:20 }}>
-                <div style={{ fontSize:11,fontWeight:700,letterSpacing:"0.12em",color:"#58a6ff",textTransform:"uppercase",marginBottom:14 }}>🎯 Targets for this Area</div>
-                <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14 }}>
-                  <div>
-                    <label style={{ ...LBL,color:"#58a6ff" }}>Welding (Dia/Inch)</label>
-                    <input type="number" min="0" step="0.1" value={targetForm.weldTarget} onChange={e=>st("weldTarget",e.target.value)} placeholder='e.g. 24' style={inp()} />
-                  </div>
-                  <div>
-                    <label style={{ ...LBL,color:"#58a6ff" }}>Fit-Up (Dia/Inch)</label>
-                    <input type="number" min="0" step="0.1" value={targetForm.fitUpTarget} onChange={e=>st("fitUpTarget",e.target.value)} placeholder='e.g. 36' style={inp()} />
-                  </div>
-                  <div>
-                    <label style={{ ...LBL,color:"#58a6ff" }}>Cons. TP Completion (No.)</label>
-                    <input type="number" min="0" step="1" value={targetForm.tpCompletion} onChange={e=>st("tpCompletion",e.target.value)} placeholder="e.g. 5" style={inp()} />
-                  </div>
-                </div>
-              </div>
-
-              <button onClick={addTarget} style={{ width:"100%",padding:13,background:"transparent",color:"#58a6ff",border:`2px solid #58a6ff`,borderRadius:6,fontSize:13,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",cursor:"pointer",fontFamily:"'Courier New',monospace",marginBottom:stagedTargets.length?10:0 }}>+ Add Area Target</button>
-              {stagedTargets.length>0&&<button onClick={submitAllTargets} style={{ width:"100%",padding:13,background:C.success,color:"#fff",border:"none",borderRadius:6,fontSize:13,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",cursor:"pointer",fontFamily:"'Courier New',monospace" }}>✔ Submit All {stagedTargets.length} {stagedTargets.length===1?"Target":"Targets"}</button>}
-            </div>
-          </div>
-        )}
-
-        {/* ══ ENGINEERING ══ */}
-        {tab==="engineering"&&(
-          <div>
-            {openCount>0&&<div style={{ background:C.dangerBg,border:`1px solid ${C.danger}55`,borderRadius:8,padding:"10px 16px",marginBottom:18,display:"flex",gap:12,alignItems:"center" }}><span style={{ color:C.danger,fontWeight:700 }}>⚠</span><span style={{ fontSize:13 }}>{openCount} open engineering {openCount===1?"issue":"issues"} pending resolution</span></div>}
-            {stagedEng.length>0&&(
-              <div style={{ background:C.surface,border:`1px solid ${C.eng}55`,borderRadius:10,padding:18,marginBottom:22 }}>
-                <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14 }}>
-                  <span style={{ fontSize:11,fontWeight:700,color:C.eng,textTransform:"uppercase",letterSpacing:"0.1em" }}>⏳ Pending <span style={{ background:C.eng,color:"#000",borderRadius:10,padding:"1px 8px",marginLeft:6 }}>{stagedEng.length}</span></span>
-                  <button onClick={submitAllEng} style={{ padding:"8px 18px",background:C.eng,color:"#fff",border:"none",borderRadius:6,cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"'Courier New',monospace" }}>✔ Submit All</button>
-                </div>
-                {stagedEng.map(e=><EngCard key={e.id} issue={e} />)}
-              </div>
-            )}
-            <div style={{ background:C.surface,border:`1px solid ${C.eng}55`,borderRadius:10,padding:26 }}>
-              <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:18 }}><div style={{ width:3,height:22,background:C.eng,borderRadius:2 }} /><span style={{ fontSize:11,fontWeight:700,letterSpacing:"0.12em",color:C.eng,textTransform:"uppercase" }}>Log Engineering Problem</span></div>
-              {addEngErr&&<div style={{ background:C.dangerBg,border:`1px solid ${C.danger}`,borderRadius:6,padding:"9px 14px",marginBottom:14,color:C.danger,fontSize:13 }}>{addEngErr}</div>}
-              <div style={{ marginBottom:16 }}><label style={LBL}>Date <span style={{ color:C.eng }}>*</span></label><input type="date" value={engForm.date} onChange={e=>se("date",e.target.value)} style={inp()} /></div>
-              <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16 }}>
-                <div><label style={LBL}>Area <span style={{ color:C.eng }}>*</span></label><select value={engForm.area} onChange={e=>se("area",e.target.value)} style={{ ...inp(),cursor:"pointer" }}><option value="">— Select —</option>{AREAS.map(a=><option key={a}>{a}</option>)}</select></div>
-                <div><label style={LBL}>Sub-Area</label><input type="text" value={engForm.subArea} onChange={e=>se("subArea",e.target.value)} placeholder="e.g. PR-01, PR-02, Deluge-01" style={inp()} /></div>
-              </div>
-              <div style={{ marginBottom:16 }}><label style={LBL}>Problem Description <span style={{ color:C.eng }}>*</span></label><textarea value={engForm.description} onChange={e=>se("description",e.target.value)} rows={5} placeholder="Describe the engineering issue, NCR, design query, hold point..." style={{ ...inp(),resize:"vertical" }} /></div>
-              <div style={{ marginBottom:20 }}>
-                <label style={LBL}>Photos</label>
-                <input ref={photoRef} type="file" accept="image/*" multiple capture="environment" onChange={handlePhotoAdd} style={{ display:"none" }} />
-                <button onClick={()=>photoRef.current.click()} style={{ padding:"9px 18px",background:C.headBg,border:`1px solid ${C.border}`,color:C.text,borderRadius:6,cursor:"pointer",fontSize:12,fontFamily:"'Courier New',monospace" }}>📷 Add Photo(s)</button>
-                {engForm.photos?.length>0&&<div style={{ display:"flex",gap:8,flexWrap:"wrap",marginTop:12 }}>{engForm.photos.map((ph,idx)=><div key={idx} style={{ position:"relative" }}><img src={ph} style={{ width:72,height:72,objectFit:"cover",borderRadius:6,border:`1px solid ${C.border}` }} /><button onClick={()=>setEngForm(p=>({...p,photos:p.photos.filter((_,i)=>i!==idx)}))} style={{ position:"absolute",top:-6,right:-6,width:20,height:20,borderRadius:"50%",background:C.danger,border:"none",color:"#fff",cursor:"pointer",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center" }}>✕</button></div>)}</div>}
-              </div>
-              <button onClick={addEng} style={{ width:"100%",padding:13,background:"transparent",color:C.eng,border:`2px solid ${C.eng}`,borderRadius:6,fontSize:13,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",cursor:"pointer",fontFamily:"'Courier New',monospace",marginBottom:stagedEng.length?10:0 }}>+ Add This Issue</button>
-              {stagedEng.length>0&&<button onClick={submitAllEng} style={{ width:"100%",padding:13,background:C.eng,color:"#fff",border:"none",borderRadius:6,fontSize:13,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",cursor:"pointer",fontFamily:"'Courier New',monospace" }}>✔ Submit All {stagedEng.length} {stagedEng.length===1?"Issue":"Issues"}</button>}
-            </div>
-            {engIssues.length>0&&<div style={{ marginTop:28 }}>
-              <div style={{ display:"flex",gap:8,marginBottom:14,alignItems:"center" }}>
-                <span style={{ fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginRight:8 }}>All Issues:</span>
-                {["all","open","resolved"].map(f=><button key={f} onClick={()=>setEngFilter(f)} style={{ padding:"4px 14px",borderRadius:4,cursor:"pointer",fontSize:11,fontWeight:700,background:engFilter===f?(f==="resolved"?C.resolvedBg:f==="open"?C.dangerBg:C.headBg):"transparent",color:engFilter===f?(f==="resolved"?C.resolved:f==="open"?C.danger:C.text):C.muted,border:`1px solid ${engFilter===f?(f==="resolved"?C.resolved:f==="open"?C.danger:C.border):C.border}`,fontFamily:"'Courier New',monospace",textTransform:"uppercase" }}>{f}</button>)}
-              </div>
-              {engIssues.filter(e=>engFilter==="all"||(e.status||"open")===engFilter).sort((a,b)=>b.date.localeCompare(a.date)).map(e=><EngCard key={e.id} issue={e} onToggle={session.isAdmin?toggleResolve:null} />)}
-            </div>}
-          </div>
-        )}
-
-        {/* ══ CHAT ══ */}
-        {tab==="chat"&&<ChatPanel session={session} />}
-
-        {/* ══ SUMMARY ══ */}
-        {tab==="summary"&&(
-          <div>
-            <div style={{ display:"flex",alignItems:"center",gap:16,marginBottom:22,flexWrap:"wrap" }}>
-              <div style={{ fontSize:11,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase" }}>Summary for:</div>
-              <input type="date" value={sumDate} onChange={e=>setSumDate(e.target.value)} style={{ ...inp({width:"auto",padding:"8px 14px"}) }} />
-              <button onClick={()=>setSumDate(todayStr())} style={{ padding:"8px 14px",background:sumDate===todayStr()?C.accent:"transparent",color:sumDate===todayStr()?"#000":C.muted,border:`1px solid ${sumDate===todayStr()?C.accent:C.border}`,borderRadius:4,cursor:"pointer",fontSize:11,fontFamily:"'Courier New',monospace",fontWeight:700 }}>Today</button>
-            </div>
-            <div style={{ background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:22,marginBottom:20 }}>
-              <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:18 }}><div style={{ width:3,height:20,background:C.accent,borderRadius:2 }} /><span style={{ fontSize:12,fontWeight:700,letterSpacing:"0.1em",color:C.accent,textTransform:"uppercase" }}>👷 Manpower Dashboard</span></div>
-              <div style={{ display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:18 }}>
-                <Stat label="Reports" value={sumReports.length} />
-                <Stat label="Welders" value={sumReports.reduce((s,r)=>s+r.welder,0)} />
-                <Stat label="Pipe Fitters" value={sumReports.reduce((s,r)=>s+r.pipeFitter,0)} />
-                <Stat label="Total Manpower" value={sumReports.reduce((s,r)=>s+r.totalManpower,0)} color={C.accent} />
-              </div>
-              {Object.keys(areaMap).length===0
-                ?<div style={{ textAlign:"center",padding:24,color:C.muted,fontSize:13 }}>No manpower data for this date.</div>
-                :<table style={{ width:"100%",borderCollapse:"collapse",fontSize:13 }}>
-                  <thead><tr style={{ background:C.headBg,borderBottom:`2px solid ${C.accent}` }}>{["Area","Sub-Areas","Supervisor(s)","Welder","Pipe Fitter","Total MP"].map(h=><th key={h} style={{ padding:"9px 12px",textAlign:"left",fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",whiteSpace:"nowrap" }}>{h}</th>)}</tr></thead>
-                  <tbody>
-                    {Object.entries(areaMap).map(([area,data],i)=>{
-                      const subs=[...new Set(data.entries.map(e=>e.subArea).filter(s=>s!=="-"))].join(", ")||"—";
-                      const sups=[...new Set(data.entries.map(e=>e.supervisor))].join(", ");
-                      return(<tr key={area} style={{ borderBottom:`1px solid ${C.border}`,background:i%2?C.altRow:"transparent" }}>
-                        <td style={{ padding:"10px 12px" }}><span style={{ background:C.headBg,border:`1px solid ${C.border}`,borderRadius:4,padding:"3px 9px",fontWeight:700 }}>{area}</span></td>
-                        <td style={{ padding:"10px 12px",color:C.muted,fontSize:12 }}>{subs}</td>
-                        <td style={{ padding:"10px 12px" }}>{sups}</td>
-                        <td style={{ padding:"10px 12px",textAlign:"center" }}>{data.welder}</td>
-                        <td style={{ padding:"10px 12px",textAlign:"center" }}>{data.pipeFitter}</td>
-                        <td style={{ padding:"10px 12px",textAlign:"center",fontWeight:700,fontSize:16,color:C.accent }}>{data.total}</td>
-                      </tr>);
-                    })}
-                    <tr style={{ borderTop:`2px solid ${C.accent}`,background:C.headBg }}>
-                      <td colSpan={3} style={{ padding:"10px 12px",fontWeight:700,fontSize:11,color:C.muted,textTransform:"uppercase" }}>TOTAL</td>
-                      <td style={{ padding:"10px 12px",textAlign:"center",fontWeight:700 }}>{sumReports.reduce((s,r)=>s+r.welder,0)}</td>
-                      <td style={{ padding:"10px 12px",textAlign:"center",fontWeight:700 }}>{sumReports.reduce((s,r)=>s+r.pipeFitter,0)}</td>
-                      <td style={{ padding:"10px 12px",textAlign:"center",fontWeight:700,fontSize:18,color:C.accent }}>{sumReports.reduce((s,r)=>s+r.totalManpower,0)}</td>
-                    </tr>
-                  </tbody>
-                </table>}
-            </div>
-
-            {/* 🎯 Area Targets Dashboard */}
-            {(()=>{
-              const dayTargets = targets.filter(t=>t.date===sumDate);
-              if (!dayTargets.length) return null;
-              return (
-                <div style={{ background:C.surface,border:`1px solid #2a3d52`,borderRadius:10,padding:22,marginBottom:20 }}>
-                  <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:18 }}>
-                    <div style={{ width:3,height:20,background:"#58a6ff",borderRadius:2 }} />
-                    <span style={{ fontSize:12,fontWeight:700,letterSpacing:"0.1em",color:"#58a6ff",textTransform:"uppercase" }}>🎯 Area Targets</span>
-                  </div>
-                  <table style={{ width:"100%",borderCollapse:"collapse",fontSize:13 }}>
-                    <thead>
-                      <tr style={{ background:C.headBg,borderBottom:`2px solid #58a6ff` }}>
-                        {["Area","Supervisor","Welding (Dia/In)","Fit-Up (Dia/In)","TP Completion (No.)"].map(h=>(
-                          <th key={h} style={{ padding:"9px 12px",textAlign:"left",fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",whiteSpace:"nowrap" }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {dayTargets.map((t,i)=>(
-                        <tr key={t.id} style={{ borderBottom:`1px solid ${C.border}`,background:i%2?C.altRow:"transparent" }}>
-                          <td style={{ padding:"10px 12px" }}><span style={{ background:C.headBg,border:`1px solid ${C.border}`,borderRadius:4,padding:"3px 9px",fontWeight:700 }}>{t.area}</span></td>
-                          <td style={{ padding:"10px 12px",fontWeight:700 }}>{t.supervisor}</td>
-                          <td style={{ padding:"10px 12px",textAlign:"center" }}>{t.weldTarget&&t.weldTarget!=="-"?<span style={{ color:"#58a6ff",fontWeight:700 }}>{t.weldTarget}"</span>:<span style={{ color:C.muted }}>—</span>}</td>
-                          <td style={{ padding:"10px 12px",textAlign:"center" }}>{t.fitUpTarget&&t.fitUpTarget!=="-"?<span style={{ color:"#58a6ff",fontWeight:700 }}>{t.fitUpTarget}"</span>:<span style={{ color:C.muted }}>—</span>}</td>
-                          <td style={{ padding:"10px 12px",textAlign:"center" }}>{t.tpCompletion&&t.tpCompletion!=="-"?<span style={{ color:"#58a6ff",fontWeight:700 }}>{t.tpCompletion} TPs</span>:<span style={{ color:C.muted }}>—</span>}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              );
-            })()}
-            <div style={{ background:C.surface,border:`1px solid ${C.eng}44`,borderRadius:10,padding:22 }}>
-              <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:18 }}>
-                <div style={{ width:3,height:20,background:C.eng,borderRadius:2 }} />
-                <span style={{ fontSize:12,fontWeight:700,letterSpacing:"0.1em",color:C.eng,textTransform:"uppercase" }}>⚠️ Engineering Dashboard</span>
-                <div style={{ marginLeft:"auto",display:"flex",gap:16 }}>
-                  <span style={{ fontSize:12,color:C.danger }}>🔴 Open: <strong>{openOnDate.length}</strong></span>
-                  <span style={{ fontSize:12,color:C.accent }}>Logged: <strong>{sumEng.length}</strong></span>
-                </div>
-              </div>
-              {sumEng.length===0?<div style={{ textAlign:"center",padding:24,color:C.muted,fontSize:13 }}>No engineering issues logged on this date.</div>:sumEng.map(e=><EngCard key={e.id} issue={e} onToggle={session.isAdmin?toggleResolve:null} />)}
-            </div>
-          </div>
-        )}
-
-        {/* ══ RECORDS (Admin) ══ */}
-        {tab==="records"&&session.isAdmin&&(
-          <div>
-            <div style={{ background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:18,marginBottom:18 }}>
-              <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr auto auto auto",gap:10,alignItems:"end" }}>
-                <div><label style={LBL}>Supervisor</label><select value={fSup} onChange={e=>setFSup(e.target.value)} style={{ ...inp(),cursor:"pointer" }}><option value="All">All</option>{SUPERVISORS.map(s=><option key={s}>{s}</option>)}</select></div>
-                <div><label style={LBL}>Area</label><select value={fArea} onChange={e=>setFArea(e.target.value)} style={{ ...inp(),cursor:"pointer" }}><option value="All">All</option>{AREAS.map(a=><option key={a}>{a}</option>)}</select></div>
-                <div><label style={LBL}>Date</label><input type="date" value={fDate} onChange={e=>setFDate(e.target.value)} style={inp()} /></div>
-                <div><label style={LBL}>Eng</label><select value={engFilter} onChange={e=>setEngFilter(e.target.value)} style={{ ...inp({fontSize:12}),cursor:"pointer" }}><option value="all">All</option><option value="open">Open</option><option value="resolved">Resolved</option></select></div>
-                <button onClick={()=>exportCSV(fReports)} style={{ padding:"10px 12px",background:"#1a4731",color:"#3fb950",border:`1px solid ${C.success}`,borderRadius:6,cursor:"pointer",fontSize:10,fontWeight:700,fontFamily:"'Courier New',monospace",whiteSpace:"nowrap" }}>⬇ MP CSV</button>
-                <button onClick={()=>exportCSV(fEng,true)} style={{ padding:"10px 12px",background:C.engBg,color:C.eng,border:`1px solid ${C.eng}`,borderRadius:6,cursor:"pointer",fontSize:10,fontWeight:700,fontFamily:"'Courier New',monospace",whiteSpace:"nowrap" }}>⬇ Eng CSV</button>
-                <button onClick={()=>exportTargetCSV(targets.filter(t=>(!fDate||t.date===fDate)&&(fSup==="All"||t.supervisor===fSup)))} style={{ padding:"10px 12px",background:"#0d1f38",color:"#58a6ff",border:`1px solid #58a6ff`,borderRadius:6,cursor:"pointer",fontSize:10,fontWeight:700,fontFamily:"'Courier New',monospace",whiteSpace:"nowrap" }}>⬇ Target CSV</button>
-              </div>
-              {(fSup!=="All"||fArea!=="All"||fDate)&&<button onClick={()=>{setFSup("All");setFArea("All");setFDate("");}} style={{ marginTop:10,background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:12,fontFamily:"'Courier New',monospace" }}>✕ Clear</button>}
-            </div>
-            <div style={{ display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,marginBottom:20 }}>
-              <Stat label="MP Reports" value={fReports.length} />
-              <Stat label="Welders" value={fReports.reduce((s,r)=>s+r.welder,0)} />
-              <Stat label="Pipe Fitters" value={fReports.reduce((s,r)=>s+r.pipeFitter,0)} />
-              <Stat label="Total MP" value={fReports.reduce((s,r)=>s+r.totalManpower,0)} />
-              <Stat label="Eng Issues" value={fEng.length} color={C.eng} />
-            </div>
-            <div style={{ marginBottom:24 }}>
-              <div style={{ fontSize:11,fontWeight:700,color:C.accent,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:10 }}>👷 Manpower Records ({fReports.length})</div>
-              {loading?<div style={{ color:C.muted,padding:24,textAlign:"center" }}>Loading...</div>:fReports.length===0?<div style={{ color:C.muted,padding:24,textAlign:"center",background:C.surface,borderRadius:10,border:`1px solid ${C.border}` }}>No records found.</div>:(
-                <div style={{ background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,overflow:"hidden" }}>
-                  <div style={{ overflowX:"auto" }}>
-                    <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
-                      <thead><tr style={{ background:C.headBg,borderBottom:`2px solid ${C.accent}` }}>{["Date","Supervisor","Area","Sub-Area","Welder","P.Fitter","Total","Job Description"].map(h=><th key={h} style={{ padding:"9px 12px",textAlign:"left",fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",whiteSpace:"nowrap" }}>{h}</th>)}</tr></thead>
-                      <tbody>{fReports.map((r,i)=>(
-                        <React.Fragment key={r.id}>
-                          <tr onClick={()=>setExpanded(expanded===r.id?null:r.id)} style={{ borderBottom:expanded===r.id?"none":`1px solid ${C.border}`,background:i%2?C.altRow:"transparent",cursor:"pointer" }}>
-                            <td style={{ padding:"9px 12px",color:C.accent,whiteSpace:"nowrap",fontWeight:600 }}>{r.date}</td>
-                            <td style={{ padding:"9px 12px",fontWeight:700 }}>{r.supervisor}</td>
-                            <td style={{ padding:"9px 12px" }}><span style={{ background:C.headBg,border:`1px solid ${C.border}`,borderRadius:4,padding:"2px 7px",fontSize:11 }}>{r.area}</span></td>
-                            <td style={{ padding:"9px 12px",color:C.muted }}>{r.subArea}</td>
-                            <td style={{ padding:"9px 12px",textAlign:"center" }}>{r.welder}</td>
-                            <td style={{ padding:"9px 12px",textAlign:"center" }}>{r.pipeFitter}</td>
-                            <td style={{ padding:"9px 12px",textAlign:"center",fontWeight:700,color:C.accent }}>{r.totalManpower}</td>
-                            <td style={{ padding:"9px 12px",color:C.muted,maxWidth:180 }}>{expanded===r.id?<span style={{ color:C.accent }}>▲</span>:<div style={{ overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{r.jobDescription}</div>}</td>
-                          </tr>
-                          {expanded===r.id&&<tr style={{ borderBottom:`1px solid ${C.border}`,background:i%2?C.altRow:"transparent" }}><td colSpan={8} style={{ padding:"8px 16px 16px" }}><div style={{ background:"#0a0e13",border:`1px solid ${C.border}`,borderRadius:6,padding:"12px 16px" }}><div style={{ fontSize:10,color:C.accent,fontWeight:700,textTransform:"uppercase",marginBottom:6 }}>Job Description</div><div style={{ color:C.text,fontSize:13,lineHeight:1.8,whiteSpace:"pre-wrap" }}>{r.jobDescription}</div></div></td></tr>}
-                        </React.Fragment>
-                      ))}</tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div style={{ marginBottom:28 }}>
-              <div style={{ fontSize:11,fontWeight:700,color:C.eng,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:10 }}>⚠️ Engineering Issues ({fEng.length})</div>
-              {fEng.length===0?<div style={{ color:C.muted,padding:24,textAlign:"center",background:C.surface,borderRadius:10,border:`1px solid ${C.border}` }}>No issues found.</div>:fEng.map(e=><EngCard key={e.id} issue={e} onToggle={toggleResolve} />)}
-            </div>
-
-            {/* Targets Records */}
-            <div style={{ marginBottom:28 }}>
-              <div style={{ fontSize:11,fontWeight:700,color:"#58a6ff",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:10 }}>🎯 Targets</div>
-              {(()=>{
-                const fTargets = targets.filter(t=>(fSup==="All"||t.supervisor===fSup)&&(!fDate||t.date===fDate)).sort((a,b)=>b.date.localeCompare(a.date));
-                if (!fTargets.length) return <div style={{ color:C.muted,padding:24,textAlign:"center",background:C.surface,borderRadius:10,border:`1px solid ${C.border}` }}>No targets found.</div>;
-                return (
-                  <div style={{ background:C.surface,border:`1px solid #2a3d52`,borderRadius:10,overflow:"hidden" }}>
-                    <div style={{ overflowX:"auto" }}>
-                      <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
-                        <thead><tr style={{ background:C.headBg,borderBottom:`2px solid #58a6ff` }}>{["Date","Supervisor","Area","Welding (Dia/In)","Fit-Up (Dia/In)","TP Completion (No.)"].map(h=><th key={h} style={{ padding:"9px 12px",textAlign:"left",fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",whiteSpace:"nowrap" }}>{h}</th>)}</tr></thead>
-                        <tbody>{fTargets.map((t,i)=>(
-                          <tr key={t.id} style={{ borderBottom:`1px solid ${C.border}`,background:i%2?C.altRow:"transparent" }}>
-                            <td style={{ padding:"9px 12px",color:C.accent,fontWeight:600 }}>{t.date}</td>
-                            <td style={{ padding:"9px 12px",fontWeight:700 }}>{t.supervisor}</td>
-                            <td style={{ padding:"9px 12px" }}><span style={{ background:C.headBg,border:`1px solid ${C.border}`,borderRadius:4,padding:"2px 7px",fontSize:11 }}>{t.area}</span></td>
-                            <td style={{ padding:"9px 12px",textAlign:"center",color:"#58a6ff",fontWeight:700 }}>{t.weldTarget&&t.weldTarget!=="-"?`${t.weldTarget}"`:"—"}</td>
-                            <td style={{ padding:"9px 12px",textAlign:"center",color:"#58a6ff",fontWeight:700 }}>{t.fitUpTarget&&t.fitUpTarget!=="-"?`${t.fitUpTarget}"`:"—"}</td>
-                            <td style={{ padding:"9px 12px",textAlign:"center",color:"#58a6ff",fontWeight:700 }}>{t.tpCompletion&&t.tpCompletion!=="-"?`${t.tpCompletion} TPs`:"—"}</td>
-                          </tr>
-                        ))}</tbody>
-                      </table>
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-            <div style={{ background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:22 }}>
-              <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:18 }}><div style={{ width:3,height:20,background:C.accent,borderRadius:2 }} /><span style={{ fontSize:12,fontWeight:700,letterSpacing:"0.1em",color:C.accent,textTransform:"uppercase" }}>🔑 User Password Management</span></div>
-              {pwSaved&&<div style={{ background:C.successBg,border:`1px solid ${C.success}`,borderRadius:6,padding:"9px 14px",marginBottom:14,color:"#3fb950",fontSize:13 }}>{pwSaved}</div>}
-              <div style={{ display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:14 }}>
-                {SUPERVISORS.map(name=>(
-                  <div key={name} style={{ background:"#0a0e13",border:`1px solid ${C.border}`,borderRadius:8,padding:"14px 16px" }}>
-                    <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:10 }}><Avatar name={name} size={24} /><label style={{ ...LBL,marginBottom:0,color:name===ADMIN_USER?C.accent:C.muted }}>{name} {name===ADMIN_USER?"(Admin)":""}</label></div>
-                    <input type="text" value={pwEdit[name]||""} onChange={e=>setPwEdit(p=>({...p,[name]:e.target.value}))} placeholder={`New password for ${name}`} style={{ ...inp(),fontSize:13 }} />
-                    <div style={{ fontSize:10,color:C.muted,marginTop:6 }}>Current: <code style={{ color:C.text }}>{users?.[name]||"—"}</code></div>
-                  </div>
-                ))}
-              </div>
-              <button onClick={savePasswords} style={{ marginTop:16,width:"100%",padding:12,background:C.accent,color:"#000",border:"none",borderRadius:6,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Courier New',monospace",letterSpacing:"0.1em",textTransform:"uppercase" }}>🔑 Save Password Changes</button>
-              <div style={{ marginTop:10,fontSize:11,color:C.muted,textAlign:"center" }}>Password changes take effect immediately. Users must re-login with new password.</div>
-            </div>
-          </div>
-        )}
+function Sheet({ children, onClose }){
+  return (
+    <div className="sheet-scrim" onClick={onClose}>
+      <div className="sheet" onClick={e=>e.stopPropagation()}>
+        <div className="grip" />
+        {children}
       </div>
     </div>
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-)
+function Flash({ msg }){
+  if(!msg) return null;
+  return <div className="flash"><Icon name="check" size={18} /> {msg}</div>;
+}
+
+/* Type-ahead combobox with free entry (sub-areas) */
+function Combobox({ value, onChange, options=[], placeholder, disabled }){
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef();
+  useEffect(() => {
+    const h = e => { if(wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+  const q = (value || "").toLowerCase();
+  const filtered = options.filter(o => o.toLowerCase().includes(q) && o.toLowerCase() !== q);
+  const exact = options.some(o => o.toLowerCase() === q && q);
+  const showList = open && !disabled && (filtered.length > 0 || (q && !exact));
+  return (
+    <div className="cmb" ref={wrapRef}>
+      <input className="input" value={value} disabled={disabled}
+        onChange={e => { onChange(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        placeholder={placeholder} autoComplete="off" />
+      {showList && (
+        <div className="cmb-list">
+          {filtered.map(o => (
+            <div key={o} className="cmb-item" onMouseDown={() => { onChange(o); setOpen(false); }}>{o}</div>
+          ))}
+          {q && !exact && (
+            <div className="cmb-item cmb-new" onMouseDown={() => setOpen(false)}>
+              <Icon name="plus" size={13} /> Use “{value}” &nbsp;<span style={{ color:"var(--text-3)", fontWeight:500 }}>· new, will be saved</span>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════ SCREENS ═══════════════════ */
+/* ════════════════════ REPORT ════════════════════ */
+function ReportScreen({ session, reports, supervisors, areas, subAreas, onAddSubArea, onSubmit, onDelete, showFlash }){
+  const [form, setForm] = useState(emptyForm(session.name));
+  const [staged, setStaged] = useState([]);
+  const [err, setErr] = useState("");
+  const total = (parseInt(form.welder)||0) + (parseInt(form.pipeFitter)||0);
+
+  const sf = (k,v) => setForm(p => ({ ...p, [k]:v }));
+  const add = () => {
+    const { date, supervisor, area, welder, pipeFitter, jobDescription } = form;
+    if(!date || !supervisor || !area || welder==="" || pipeFitter==="" || !jobDescription){
+      setErr("Please fill in all required (*) fields."); return;
+    }
+    setErr("");
+    if(form.subArea && form.area && !(subAreas[form.area]||[]).includes(form.subArea)) onAddSubArea(form.area, form.subArea);
+    setStaged(p => [...p, {
+      id:makeId("R"), date, supervisor, area, subArea:form.subArea||"-",
+      welder:parseInt(welder)||0, pipeFitter:parseInt(pipeFitter)||0,
+      totalManpower:(parseInt(welder)||0)+(parseInt(pipeFitter)||0), jobDescription
+    }]);
+    setForm(p => ({ ...p, area:"", subArea:"", welder:"", pipeFitter:"", jobDescription:"" }));
+  };
+  const submit = () => {
+    if(!staged.length) return;
+    onSubmit(staged.map(e => ({ ...e, submittedAt:fmtForSheet() })));
+    setStaged([]);
+    showFlash(`${staged.length} ${staged.length===1?"entry":"entries"} submitted to records`);
+  };
+
+  const myToday = reports.filter(r => r.supervisor===session.name && r.date===todayStr());
+  const sumOf = k => staged.reduce((s,e)=>s+e[k],0);
+
+  return (
+    <div>
+      <h1 className="page-title">Daily Report</h1>
+      <p className="page-sub">Log manpower per area for {form.date}.</p>
+
+      {staged.length > 0 && (
+        <div className="pending">
+          <div className="ph">
+            <span className="ph-label">⏳ Pending <span className="count-pill" style={{background:"var(--accent)"}}>{staged.length}</span></span>
+            <button className="btn btn-success btn-sm" onClick={submit}><Icon name="check" size={14}/> Submit all</button>
+          </div>
+          {staged.map(e => (
+            <div className="staged-row" key={e.id}>
+              <Avatar name={e.supervisor} size={30} />
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ display:"flex", gap:7, alignItems:"center", flexWrap:"wrap" }}>
+                  <span className="chip area">{e.area}</span>
+                  {e.subArea!=="-" && <span style={{fontSize:11,color:"var(--text-3)"}}>{e.subArea}</span>}
+                  <span style={{fontSize:12,color:"var(--text-2)"}}>W {e.welder} · PF {e.pipeFitter} · <strong style={{color:"var(--accent)"}}>{e.totalManpower}</strong></span>
+                </div>
+              </div>
+              <button className="x" onClick={()=>setStaged(p=>p.filter(x=>x.id!==e.id))}><Icon name="x" size={13}/></button>
+            </div>
+          ))}
+          <div style={{ display:"flex", gap:16, marginTop:12, paddingTop:11, borderTop:"1px solid var(--border)", fontSize:12, color:"var(--text-2)" }}>
+            <span>Welder <strong className="tnum" style={{color:"var(--text)"}}>{sumOf("welder")}</strong></span>
+            <span>Fitter <strong className="tnum" style={{color:"var(--text)"}}>{sumOf("pipeFitter")}</strong></span>
+            <span>Total MP <strong className="tnum" style={{color:"var(--accent)"}}>{sumOf("totalManpower")}</strong></span>
+          </div>
+        </div>
+      )}
+
+      <div className="card pad">
+        <div className="section-head"><span className="bar"/><span className="st">＋ Add area entry</span></div>
+        {err && <div className="alert">{err}</div>}
+
+        <div className="field">
+          <label className="label">Date <span className="req">*</span></label>
+          <input type="date" className="input" value={form.date} onChange={e=>sf("date",e.target.value)} />
+        </div>
+
+        <div className="grid-2">
+          <div className="field">
+            <label className="label">Supervisor <span className="req">*</span></label>
+            {session.isAdmin
+              ? <select className="select" value={form.supervisor} onChange={e=>sf("supervisor",e.target.value)}>
+                  <option value="">— Select —</option>
+                  {supervisors.map(s=><option key={s}>{s}</option>)}
+                </select>
+              : <div className="locked-field">
+                  <Avatar name={session.name} size={24} />
+                  <strong style={{fontSize:14}}>{session.name}</strong>
+                  <span className="lk"><Icon name="lock" size={11}/> locked</span>
+                </div>}
+          </div>
+          <div className="field">
+            <label className="label">Area <span className="req">*</span></label>
+            <select className="select" value={form.area} onChange={e=>setForm(p=>({ ...p, area:e.target.value, subArea:"" }))}>
+              <option value="">— Select —</option>
+              {areas.map(a=><option key={a}>{a}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className="field">
+          <label className="label">Sub-Area</label>
+          <Combobox value={form.subArea} onChange={v=>sf("subArea",v)}
+            options={subAreas[form.area]||[]} disabled={!form.area}
+            placeholder={form.area ? "Type or pick a sub-area…" : "Select an area first"} />
+        </div>
+
+        <div className="subpanel">
+          <div className="sp-title"><Icon name="user" size={14}/> Manpower</div>
+          <div className="grid-3">
+            <div>
+              <label className="label">Welder <span className="req">*</span></label>
+              <input type="number" min="0" inputMode="numeric" className="input" value={form.welder} onChange={e=>sf("welder",e.target.value)} placeholder="0" />
+            </div>
+            <div>
+              <label className="label">Fitter <span className="req">*</span></label>
+              <input type="number" min="0" inputMode="numeric" className="input" value={form.pipeFitter} onChange={e=>sf("pipeFitter",e.target.value)} placeholder="0" />
+            </div>
+            <div>
+              <label className="label">Total</label>
+              <div className="total-box tnum">{total}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="field">
+          <label className="label">Job Description <span className="req">*</span></label>
+          <textarea className="textarea" rows={4} value={form.jobDescription} onChange={e=>sf("jobDescription",e.target.value)} placeholder="Describe work performed in this area / sub-area…" />
+        </div>
+
+        <button className="btn btn-outline btn-block" onClick={add}><Icon name="plus" size={16}/> Add this entry</button>
+        {staged.length > 0 &&
+          <button className="btn btn-success btn-block" onClick={submit}><Icon name="check" size={16}/> Submit {staged.length} to records</button>}
+      </div>
+
+      {myToday.length > 0 && (
+        <div className="card pad" style={{ marginTop:14 }}>
+          <div className="section-head"><span className="bar"/><span className="st">My entries today ({myToday.length})</span></div>
+          {myToday.map(r => (
+            <div className="staged-row" key={r.id}>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ display:"flex", gap:7, alignItems:"center", flexWrap:"wrap", marginBottom:3 }}>
+                  <span className="chip area">{r.area}</span>
+                  {r.subArea!=="-" && <span style={{fontSize:11,color:"var(--text-3)"}}>{r.subArea}</span>}
+                  <span style={{fontSize:12,color:"var(--text-2)"}}>W {r.welder} · PF {r.pipeFitter} · <strong style={{color:"var(--accent)"}}>{r.totalManpower}</strong></span>
+                </div>
+                <div style={{ fontSize:12, color:"var(--text-3)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{r.jobDescription}</div>
+              </div>
+              <button className="x" onClick={()=>onDelete(r.id)}><Icon name="trash" size={13}/></button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ════════════════════ TARGET ════════════════════ */
+function TargetScreen({ session, reports, supervisors, areas, onSubmit, showFlash }){
+  const [form, setForm] = useState(emptyTarget(session.name));
+  const [staged, setStaged] = useState([]);
+  const [err, setErr] = useState("");
+  const st = (k,v) => setForm(p=>({ ...p, [k]:v }));
+
+  const add = () => {
+    if(!form.date || !form.supervisor || !form.area){ setErr("Please fill Date, Supervisor and Area."); return; }
+    setErr("");
+    setStaged(p => [...p, { id:makeId("T"), ...form,
+      weldTarget:form.weldTarget||"-", fitUpTarget:form.fitUpTarget||"-", tpCompletion:form.tpCompletion||"-" }]);
+    setForm(p => ({ ...p, area:"", weldTarget:"", fitUpTarget:"", tpCompletion:"" }));
+  };
+  const submit = () => {
+    if(!staged.length) return;
+    onSubmit(staged.map(e=>({ ...e, submittedAt:fmtForSheet() })));
+    setStaged([]);
+    showFlash(`${staged.length} ${staged.length===1?"target":"targets"} submitted`);
+  };
+
+  const areaReports = form.area ? reports.filter(r=>r.date===form.date && r.area===form.area) : [];
+  const aW = areaReports.reduce((s,r)=>s+r.welder,0);
+  const aPF = areaReports.reduce((s,r)=>s+r.pipeFitter,0);
+  const aSup = [...new Set(areaReports.map(r=>r.supervisor))].join(", ") || "—";
+
+  return (
+    <div>
+      <h1 className="page-title">Set Targets</h1>
+      <p className="page-sub">Welding, fit-up & TP targets per area.</p>
+
+      {staged.length > 0 && (
+        <div className="pending" style={{ borderColor:"var(--info)" }}>
+          <div className="ph">
+            <span className="ph-label" style={{ color:"var(--info)" }}>⏳ Pending <span className="count-pill" style={{background:"var(--info)"}}>{staged.length}</span></span>
+            <button className="btn btn-success btn-sm" onClick={submit}><Icon name="check" size={14}/> Submit all</button>
+          </div>
+          {staged.map(e => (
+            <div className="staged-row" key={e.id}>
+              <div style={{ flex:1 }}>
+                <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+                  <span className="chip area">{e.area}</span>
+                  <span style={{fontSize:12,color:"var(--info)",fontWeight:600}}>Weld {e.weldTarget}″ · Fit {e.fitUpTarget}″ · {e.tpCompletion} TP</span>
+                </div>
+              </div>
+              <button className="x" onClick={()=>setStaged(p=>p.filter(x=>x.id!==e.id))}><Icon name="x" size={13}/></button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="card pad">
+        <div className="section-head"><span className="bar" style={{background:"var(--info)"}}/><span className="st" style={{color:"var(--info)"}}>Area target</span></div>
+        {err && <div className="alert">{err}</div>}
+
+        <div className="field">
+          <label className="label">Date <span className="req">*</span></label>
+          <input type="date" className="input" value={form.date} onChange={e=>st("date",e.target.value)} />
+        </div>
+        <div className="grid-2">
+          <div className="field">
+            <label className="label">Supervisor <span className="req">*</span></label>
+            {session.isAdmin
+              ? <select className="select" value={form.supervisor} onChange={e=>st("supervisor",e.target.value)}>
+                  <option value="">— Select —</option>{supervisors.map(s=><option key={s}>{s}</option>)}
+                </select>
+              : <div className="locked-field"><Avatar name={session.name} size={24}/><strong style={{fontSize:14}}>{session.name}</strong><span className="lk"><Icon name="lock" size={11}/> locked</span></div>}
+          </div>
+          <div className="field">
+            <label className="label">Area <span className="req">*</span></label>
+            <select className="select" value={form.area} onChange={e=>st("area",e.target.value)}>
+              <option value="">— Select —</option>{areas.map(a=><option key={a}>{a}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {form.area && (
+          <div className="subpanel" style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, textAlign:"center" }}>
+            <div><div className="sl" style={{fontSize:9.5,color:"var(--text-3)",textTransform:"uppercase",letterSpacing:".06em"}}>Welder</div><div className="tnum" style={{fontSize:22,fontWeight:800,color:"var(--accent)"}}>{aW||"—"}</div></div>
+            <div><div className="sl" style={{fontSize:9.5,color:"var(--text-3)",textTransform:"uppercase",letterSpacing:".06em"}}>Fitter</div><div className="tnum" style={{fontSize:22,fontWeight:800,color:"var(--accent)"}}>{aPF||"—"}</div></div>
+            <div><div className="sl" style={{fontSize:9.5,color:"var(--text-3)",textTransform:"uppercase",letterSpacing:".06em"}}>Supervisor</div><div style={{fontSize:13,fontWeight:700,marginTop:4}}>{aSup}</div></div>
+            {areaReports.length===0 && <div style={{gridColumn:"1/-1",fontSize:11.5,color:"var(--text-3)"}}>No manpower submitted for {form.area} yet.</div>}
+          </div>
+        )}
+
+        <div className="subpanel">
+          <div className="sp-title" style={{color:"var(--info)"}}><Icon name="target" size={14}/> Targets for this area</div>
+          <div className="grid-3">
+            <div><label className="label">Welding ″</label><input type="number" min="0" step="0.1" inputMode="decimal" className="input" value={form.weldTarget} onChange={e=>st("weldTarget",e.target.value)} placeholder="24" /></div>
+            <div><label className="label">Fit-Up ″</label><input type="number" min="0" step="0.1" inputMode="decimal" className="input" value={form.fitUpTarget} onChange={e=>st("fitUpTarget",e.target.value)} placeholder="36" /></div>
+            <div><label className="label">TP No.</label><input type="number" min="0" step="1" inputMode="numeric" className="input" value={form.tpCompletion} onChange={e=>st("tpCompletion",e.target.value)} placeholder="5" /></div>
+          </div>
+        </div>
+
+        <button className="btn btn-outline btn-block" style={{ color:"var(--info)", borderColor:"var(--info)" }} onClick={add}><Icon name="plus" size={16}/> Add target</button>
+        {staged.length > 0 && <button className="btn btn-success btn-block" onClick={submit}><Icon name="check" size={16}/> Submit {staged.length} targets</button>}
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════ ENGINEERING ════════════════════ */
+function EngScreen({ session, engIssues, areas, subAreas, onAddSubArea, onSubmit, onToggle, showFlash }){
+  const [form, setForm] = useState(emptyEng());
+  const [staged, setStaged] = useState([]);
+  const [err, setErr] = useState("");
+  const [filter, setFilter] = useState("all");
+  const fileRef = useRef();
+  const se = (k,v) => setForm(p=>({ ...p, [k]:v }));
+
+  const onPhoto = async e => {
+    const files = Array.from(e.target.files);
+    const dataUrls = await Promise.all(files.map(f => new Promise(res => {
+      const r = new FileReader(); r.onload = ev => res(ev.target.result); r.readAsDataURL(f);
+    })));
+    setForm(p => ({ ...p, photos:[...(p.photos||[]), ...dataUrls] }));
+    e.target.value = "";
+  };
+  const add = () => {
+    if(!form.date || !form.area || !form.description){ setErr("Please fill in all required (*) fields."); return; }
+    setErr("");
+    if(form.subArea && form.area && !(subAreas[form.area]||[]).includes(form.subArea)) onAddSubArea(form.area, form.subArea);
+    setStaged(p => [...p, { id:makeId("E"), date:form.date, area:form.area, subArea:form.subArea||"-",
+      description:form.description, photos:form.photos||[], status:"open" }]);
+    setForm(emptyEng());
+  };
+  const submit = () => {
+    if(!staged.length) return;
+    onSubmit(staged.map(e=>({ ...e, submittedAt:fmtForSheet() })));
+    setStaged([]);
+    showFlash(`${staged.length} ${staged.length===1?"issue":"issues"} submitted`);
+  };
+
+  const openCount = engIssues.filter(e=>(e.status||"open")==="open").length;
+  const list = engIssues.filter(e=>filter==="all"||(e.status||"open")===filter).slice().sort((a,b)=>b.date.localeCompare(a.date));
+
+  return (
+    <div>
+      <h1 className="page-title">Engineering</h1>
+      <p className="page-sub">Log NCRs, RFIs, holds & site problems.</p>
+
+      {openCount > 0 && <div className="banner danger"><Icon name="eng" size={17}/> {openCount} open {openCount===1?"issue":"issues"} pending resolution</div>}
+
+      {staged.length > 0 && (
+        <div className="pending" style={{ borderColor:"var(--info)" }}>
+          <div className="ph">
+            <span className="ph-label" style={{color:"var(--info)"}}>⏳ Pending <span className="count-pill" style={{background:"var(--info)"}}>{staged.length}</span></span>
+            <button className="btn btn-success btn-sm" onClick={submit}><Icon name="check" size={14}/> Submit all</button>
+          </div>
+          {staged.map(e => <EngCard key={e.id} issue={e} />)}
+        </div>
+      )}
+
+      <div className="card pad">
+        <div className="section-head"><span className="bar" style={{background:"var(--danger)"}}/><span className="st" style={{color:"var(--danger)"}}>Log a problem</span></div>
+        {err && <div className="alert">{err}</div>}
+
+        <div className="field">
+          <label className="label">Date <span className="req">*</span></label>
+          <input type="date" className="input" value={form.date} onChange={e=>se("date",e.target.value)} />
+        </div>
+        <div className="grid-2">
+          <div className="field">
+            <label className="label">Area <span className="req">*</span></label>
+            <select className="select" value={form.area} onChange={e=>setForm(p=>({ ...p, area:e.target.value, subArea:"" }))}>
+              <option value="">— Select —</option>{areas.map(a=><option key={a}>{a}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label className="label">Sub-Area</label>
+            <Combobox value={form.subArea} onChange={v=>se("subArea",v)}
+              options={subAreas[form.area]||[]} disabled={!form.area}
+              placeholder={form.area ? "Type or pick…" : "Select area first"} />
+          </div>
+        </div>
+        <div className="field">
+          <label className="label">Problem Description <span className="req">*</span></label>
+          <textarea className="textarea" rows={4} value={form.description} onChange={e=>se("description",e.target.value)} placeholder="Describe the engineering issue, NCR, design query, hold point…" />
+        </div>
+        <div className="field">
+          <label className="label">Photos</label>
+          <input ref={fileRef} type="file" accept="image/*" multiple capture="environment" onChange={onPhoto} style={{ display:"none" }} />
+          <button className="btn btn-ghost" onClick={()=>fileRef.current.click()}><Icon name="camera" size={16}/> Add photo(s)</button>
+          {form.photos && form.photos.length>0 &&
+            <div className="eng-photos" style={{ marginTop:11 }}>
+              {form.photos.map((ph,i) => (
+                <div key={i} style={{ position:"relative" }}>
+                  <img src={ph} style={{ width:64, height:64, objectFit:"cover", borderRadius:8, border:"1px solid var(--border)" }} alt="" />
+                  <button onClick={()=>se("photos", form.photos.filter((_,j)=>j!==i))}
+                    style={{ position:"absolute", top:-6, right:-6, width:20, height:20, borderRadius:"50%", background:"var(--danger)", border:"none", color:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}><Icon name="x" size={11}/></button>
+                </div>
+              ))}
+            </div>}
+        </div>
+        <button className="btn btn-outline btn-block" style={{ color:"var(--danger)", borderColor:"var(--danger)" }} onClick={add}><Icon name="plus" size={16}/> Add this issue</button>
+        {staged.length>0 && <button className="btn btn-success btn-block" onClick={submit}><Icon name="check" size={16}/> Submit {staged.length} issues</button>}
+      </div>
+
+      {engIssues.length > 0 && (
+        <div style={{ marginTop:18 }}>
+          <div style={{ display:"flex", alignItems:"center", marginBottom:12 }}>
+            <span className="st" style={{ fontSize:11, fontWeight:700, letterSpacing:".1em", textTransform:"uppercase", color:"var(--text-2)" }}>All issues</span>
+            <div className="segmented" style={{ marginLeft:"auto" }}>
+              {["all","open","resolved"].map(f => (
+                <button key={f} className={filter===f?"on":""} onClick={()=>setFilter(f)} style={{ textTransform:"capitalize" }}>{f}</button>
+              ))}
+            </div>
+          </div>
+          {list.length===0
+            ? <div className="empty"><div className="ee">📭</div>No {filter} issues.</div>
+            : list.map(e => <EngCard key={e.id} issue={e} onToggle={onToggle} isAdmin={session.isAdmin} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+
+/* ════════════════════ SUMMARY ════════════════════ */
+function SummaryScreen({ session, reports, targets, engIssues, onToggle }){
+  const [sumDate, setSumDate] = useState(todayStr());
+  const isToday = sumDate === todayStr();
+
+  const sumReports = reports.filter(r=>r.date===sumDate);
+  const dayTargets = targets.filter(t=>t.date===sumDate);
+  const sumEng = engIssues.filter(r=>r.date===sumDate);
+
+  const areaMap = {};
+  sumReports.forEach(r => {
+    if(!areaMap[r.area]) areaMap[r.area] = { welder:0, pipeFitter:0, total:0, entries:[] };
+    const a = areaMap[r.area];
+    a.welder += r.welder; a.pipeFitter += r.pipeFitter; a.total += r.totalManpower; a.entries.push(r);
+  });
+  const sum = k => sumReports.reduce((s,r)=>s+r[k],0);
+  const openOnDate = engIssues.filter(e=>{
+    const sub = (e.submittedAt||e.date).slice(0,10);
+    if((e.status||"open")==="open") return e.date <= sumDate;
+    return e.resolvedAt && e.resolvedAt.slice(0,10) > sumDate;
+  }).length;
+
+  return (
+    <div>
+      <h1 className="page-title">Summary</h1>
+      <div style={{ display:"flex", gap:10, alignItems:"center", marginBottom:16 }}>
+        <input type="date" className="input" style={{ flex:1 }} value={sumDate} onChange={e=>setSumDate(e.target.value)} />
+        <button className={"btn btn-sm " + (isToday ? "btn-primary" : "btn-ghost")} onClick={()=>setSumDate(todayStr())} style={{ whiteSpace:"nowrap" }}>Today</button>
+      </div>
+
+      <div className="card pad">
+        <div className="section-head"><span className="bar"/><span className="st">👷 Manpower</span></div>
+        <div className="stat-row" style={{ gridTemplateColumns:"repeat(2,1fr)", marginBottom:16 }}>
+          <Stat label="Welders" value={sum("welder")} />
+          <Stat label="Pipe Fitters" value={sum("pipeFitter")} />
+          <Stat label="Reports" value={sumReports.length} tone="primary" />
+          <Stat label="Total MP" value={sum("totalManpower")} tone="accent" />
+        </div>
+        {Object.keys(areaMap).length===0
+          ? <div className="empty"><div className="ee">📊</div>No manpower data for this date.</div>
+          : <div className="tbl-wrap">
+              <table className="tbl">
+                <thead><tr>{["Area","Sup.","W","PF","Total"].map(h=><th key={h} className={h==="Area"||h==="Sup."?"":"num"}>{h}</th>)}</tr></thead>
+                <tbody>
+                  {Object.entries(areaMap).map(([area,d]) => {
+                    const sups = [...new Set(d.entries.map(e=>e.supervisor))].join(", ");
+                    return (
+                      <tr key={area}>
+                        <td><span className="chip area">{area}</span></td>
+                        <td style={{ fontSize:12, color:"var(--text-2)", whiteSpace:"normal" }}>{sups}</td>
+                        <td className="num">{d.welder}</td>
+                        <td className="num">{d.pipeFitter}</td>
+                        <td className="num" style={{ fontWeight:800, color:"var(--accent)" }}>{d.total}</td>
+                      </tr>
+                    );
+                  })}
+                  <tr className="tot-row">
+                    <td colSpan={2} style={{ fontSize:10, letterSpacing:".06em", textTransform:"uppercase", color:"var(--text-2)" }}>Total</td>
+                    <td className="num">{sum("welder")}</td>
+                    <td className="num">{sum("pipeFitter")}</td>
+                    <td className="num" style={{ fontSize:16, color:"var(--accent)" }}>{sum("totalManpower")}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>}
+      </div>
+
+      {dayTargets.length > 0 && (
+        <div className="card pad" style={{ marginTop:14 }}>
+          <div className="section-head"><span className="bar" style={{background:"var(--info)"}}/><span className="st" style={{color:"var(--info)"}}>🎯 Area Targets</span></div>
+          <div className="tbl-wrap">
+            <table className="tbl">
+              <thead><tr>{["Area","Sup.","Weld","Fit","TP"].map(h=><th key={h} className={h==="Area"||h==="Sup."?"":"num"}>{h}</th>)}</tr></thead>
+              <tbody>
+                {dayTargets.map(t => (
+                  <tr key={t.id}>
+                    <td><span className="chip area">{t.area}</span></td>
+                    <td style={{ fontSize:12, color:"var(--text-2)" }}>{t.supervisor}</td>
+                    <td className="num" style={{ color:"var(--info)", fontWeight:700 }}>{t.weldTarget!=="-"?t.weldTarget+"″":"—"}</td>
+                    <td className="num" style={{ color:"var(--info)", fontWeight:700 }}>{t.fitUpTarget!=="-"?t.fitUpTarget+"″":"—"}</td>
+                    <td className="num" style={{ color:"var(--info)", fontWeight:700 }}>{t.tpCompletion!=="-"?t.tpCompletion:"—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      <div className="card pad" style={{ marginTop:14 }}>
+        <div className="section-head">
+          <span className="bar" style={{background:"var(--danger)"}}/>
+          <span className="st" style={{color:"var(--danger)"}}>⚠️ Engineering</span>
+          <span className="right" style={{ display:"flex", gap:12, fontSize:12 }}>
+            <span style={{ color:"var(--danger)" }}>Open <strong>{openOnDate}</strong></span>
+            <span style={{ color:"var(--text-2)" }}>Logged <strong>{sumEng.length}</strong></span>
+          </span>
+        </div>
+        {sumEng.length===0
+          ? <div className="empty"><div className="ee">✅</div>No issues logged on this date.</div>
+          : sumEng.map(e => <EngCard key={e.id} issue={e} onToggle={onToggle} isAdmin={session.isAdmin} />)}
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════ RECORDS (admin) ════════════════════ */
+function RecordsScreen({ session, reports, targets, engIssues, supervisors, areas, subAreas, users, project,
+  onToggle, onDeleteReport, onAddSup, onRemoveSup, onRenameSup, onSetPw,
+  onAddArea, onRemoveArea, onRenameArea, onAddSubArea, onRemoveSubArea, onImportAreaMap, onUpdateProject, showFlash }){
+  const [fSup, setFSup] = useState("All");
+  const [fArea, setFArea] = useState("All");
+  const [fDate, setFDate] = useState("");
+  const [engFilter, setEngFilter] = useState("all");
+  const [expanded, setExpanded] = useState(null);
+  const [sub, setSub] = useState("manpower");
+  /* management local state */
+  const [newSup, setNewSup] = useState("");
+  const [newSupPw, setNewSupPw] = useState("");
+  const [pwEdit, setPwEdit] = useState({});
+  const [nameEdit, setNameEdit] = useState({});
+  const [newArea, setNewArea] = useState("");
+  const [areaEdit, setAreaEdit] = useState({});
+  const [newSA, setNewSA] = useState({});
+  const [bulkText, setBulkText] = useState("");
+  const [proj, setProj] = useState(project);
+  const [confirmDel, setConfirmDel] = useState(null);
+
+  const fReports = reports.filter(r=>(fSup==="All"||r.supervisor===fSup)&&(fArea==="All"||r.area===fArea)&&(!fDate||r.date===fDate)).slice().sort((a,b)=>b.date.localeCompare(a.date));
+  const fEng = engIssues.filter(r=>(fArea==="All"||r.area===fArea)&&(!fDate||r.date===fDate)&&(engFilter==="all"||(r.status||"open")===engFilter)).slice().sort((a,b)=>b.date.localeCompare(a.date));
+  const fTargets = targets.filter(t=>(fSup==="All"||t.supervisor===fSup)&&(!fDate||t.date===fDate)).slice().sort((a,b)=>b.date.localeCompare(a.date));
+  const sum = k => fReports.reduce((s,r)=>s+r[k],0);
+
+  const csv = (rows, head, mapRow, name) => {
+    const lines = [head.join(","), ...rows.map(r => mapRow(r).map(c=>`"${String(c??"").replace(/"/g,'""')}"`).join(","))];
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([lines.join("\n")], { type:"text/csv" }));
+    a.download = `${name}_${todayStr()}.csv`; a.click();
+    showFlash(`${name} CSV exported`);
+  };
+
+  const savePw = (name) => {
+    const p = (pwEdit[name]||"").trim();
+    if(!p) return;
+    onSetPw(name, p); setPwEdit(s=>({ ...s, [name]:"" })); showFlash(`${name} password updated`);
+  };
+  const saveRename = (name) => {
+    const nn = (nameEdit[name]||"").trim();
+    if(!nn || nn===name) { setNameEdit(s=>({ ...s, [name]:undefined })); return; }
+    if(supervisors.includes(nn)) { showFlash(`"${nn}" already exists`); return; }
+    onRenameSup(name, nn); setNameEdit(s=>{ const c={...s}; delete c[name]; return c; }); showFlash(`Renamed to ${nn}`);
+  };
+  const addSup = () => {
+    const n = newSup.trim();
+    if(!n) return;
+    if(supervisors.includes(n) || n===GUEST_USER) { showFlash(`"${n}" already exists`); return; }
+    onAddSup(n, (newSupPw.trim()||"1234")); setNewSup(""); setNewSupPw(""); showFlash(`${n} added`);
+  };
+  const removeSup = (name) => { onRemoveSup(name); setConfirmDel(null); showFlash(`${name} removed · records kept`); };
+  const saveArea = (a) => {
+    const nn = (areaEdit[a]||"").trim();
+    if(!nn || nn===a) { setAreaEdit(s=>{ const c={...s}; delete c[a]; return c; }); return; }
+    if(areas.includes(nn)) { showFlash(`"${nn}" already exists`); return; }
+    onRenameArea(a, nn); setAreaEdit(s=>{ const c={...s}; delete c[a]; return c; }); showFlash(`Area renamed to ${nn}`);
+  };
+  const addArea = () => {
+    const n = newArea.trim();
+    if(!n) return;
+    if(areas.includes(n)) { showFlash(`"${n}" already exists`); return; }
+    onAddArea(n); setNewArea(""); showFlash(`Area ${n} added`);
+  };
+  const addSubArea = (area) => {
+    const n = (newSA[area]||"").trim();
+    if(!n) return;
+    if((subAreas[area]||[]).includes(n)) { showFlash(`"${n}" already exists`); return; }
+    onAddSubArea(area, n); setNewSA(s=>({ ...s, [area]:"" })); showFlash(`${n} added to ${area}`);
+  };
+  const runImport = () => {
+    const pairs = bulkText.split(/\r?\n/)
+      .map(l => l.split(/\t|,|;/).map(s => s.trim()))
+      .filter(r => r[0] && !/^area$/i.test(r[0]))
+      .map(r => [r[0], r[1] || ""]);
+    if(!pairs.length) { showFlash("Nothing to import"); return; }
+    onImportAreaMap(pairs);
+    const nAreas = new Set(pairs.map(p=>p[0])).size;
+    const nSubs = pairs.filter(p=>p[1]).length;
+    setBulkText(""); showFlash(`Imported ${nAreas} areas · ${nSubs} sub-areas`);
+  };
+
+  const subs = [
+    { id:"manpower", label:"Manpower", n:fReports.length },
+    { id:"eng", label:"Issues", n:fEng.length },
+    { id:"targets", label:"Targets", n:fTargets.length },
+    { id:"manage", label:"⚙ Manage", n:supervisors.length },
+  ];
+
+  return (
+    <div>
+      <h1 className="page-title">Records</h1>
+      <p className="page-sub">Admin · all submitted data &amp; exports.</p>
+
+      <div className="card pad">
+        <div className="section-head"><span className="bar"/><span className="st"><Icon name="filter" size={13} style={{verticalAlign:"-2px"}}/> Filters</span></div>
+        <div className="grid-2">
+          <div className="field" style={{ marginBottom:10 }}>
+            <label className="label">Supervisor</label>
+            <select className="select" value={fSup} onChange={e=>setFSup(e.target.value)}><option>All</option>{supervisors.map(s=><option key={s}>{s}</option>)}</select>
+          </div>
+          <div className="field" style={{ marginBottom:10 }}>
+            <label className="label">Area</label>
+            <select className="select" value={fArea} onChange={e=>setFArea(e.target.value)}><option>All</option>{areas.map(a=><option key={a}>{a}</option>)}</select>
+          </div>
+        </div>
+        <div className="field" style={{ marginBottom:0 }}>
+          <label className="label">Date</label>
+          <input type="date" className="input" value={fDate} onChange={e=>setFDate(e.target.value)} />
+        </div>
+        {(fSup!=="All"||fArea!=="All"||fDate) &&
+          <button className="btn btn-ghost btn-sm" style={{ marginTop:10 }} onClick={()=>{setFSup("All");setFArea("All");setFDate("");}}><Icon name="x" size={13}/> Clear filters</button>}
+      </div>
+
+      <div className="stat-row" style={{ gridTemplateColumns:"repeat(4,1fr)", margin:"14px 0" }}>
+        <Stat label="Reports" value={fReports.length} tone="primary" />
+        <Stat label="Welders" value={sum("welder")} />
+        <Stat label="Fitters" value={sum("pipeFitter")} />
+        <Stat label="Issues" value={fEng.length} tone="danger" />
+      </div>
+
+      <div className="segmented" style={{ display:"flex", width:"100%", marginBottom:14 }}>
+        {subs.map(s => (
+          <button key={s.id} className={sub===s.id?"on":""} style={{ flex:1 }} onClick={()=>setSub(s.id)}>
+            {s.label} <span style={{ opacity:.6 }}>{s.n}</span>
+          </button>
+        ))}
+      </div>
+
+      {sub==="manpower" && (
+        <div className="card pad">
+          <div className="section-head">
+            <span className="bar"/><span className="st">Manpower records</span>
+            <button className="btn btn-ghost btn-sm right" onClick={()=>csv(fReports,["Date","Supervisor","Area","Sub-Area","Welder","Pipe Fitter","Total","Job Description"],r=>[r.date,r.supervisor,r.area,r.subArea,r.welder,r.pipeFitter,r.totalManpower,r.jobDescription],"Manpower")}><Icon name="download" size={14}/> CSV</button>
+          </div>
+          {fReports.length===0 ? <div className="empty"><div className="ee">🔍</div>No records found.</div> :
+            <div className="tbl-wrap">
+              <table className="tbl">
+                <thead><tr>{["Date","Sup.","Area","W","PF","Tot"].map(h=><th key={h} className={["W","PF","Tot"].includes(h)?"num":""}>{h}</th>)}</tr></thead>
+                <tbody>
+                  {fReports.map(r => (
+                    <React.Fragment key={r.id}>
+                      <tr onClick={()=>setExpanded(expanded===r.id?null:r.id)} style={{ cursor:"pointer" }}>
+                        <td style={{ color:"var(--text-2)", fontSize:12 }}>{r.date.slice(5)}</td>
+                        <td style={{ fontWeight:600 }}>{r.supervisor}</td>
+                        <td><span className="chip area">{r.area}</span></td>
+                        <td className="num">{r.welder}</td>
+                        <td className="num">{r.pipeFitter}</td>
+                        <td className="num" style={{ fontWeight:800, color:"var(--accent)" }}>{r.totalManpower}</td>
+                      </tr>
+                      {expanded===r.id &&
+                        <tr><td colSpan={6} style={{ background:"var(--surface-2)", whiteSpace:"normal" }}>
+                          <div style={{ fontSize:9.5, color:"var(--primary)", fontWeight:700, textTransform:"uppercase", letterSpacing:".06em", marginBottom:5 }}>{r.subArea!=="-"?r.subArea+" · ":""}Job description</div>
+                          <div style={{ fontSize:13, lineHeight:1.6, color:"var(--text)" }}>{r.jobDescription}</div>
+                          <button className="btn btn-sm" style={{ marginTop:10, color:"var(--danger)", border:"1px solid var(--danger)", background:"var(--danger-soft)" }} onClick={(e)=>{ e.stopPropagation(); onDeleteReport(r.id); }}><Icon name="trash" size={13}/> Delete</button>
+                        </td></tr>}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>}
+        </div>
+      )}
+
+      {sub==="eng" && (
+        <div>
+          <div style={{ display:"flex", alignItems:"center", marginBottom:12 }}>
+            <div className="segmented">
+              {["all","open","resolved"].map(f=><button key={f} className={engFilter===f?"on":""} onClick={()=>setEngFilter(f)} style={{textTransform:"capitalize"}}>{f}</button>)}
+            </div>
+            <button className="btn btn-ghost btn-sm" style={{ marginLeft:"auto" }} onClick={()=>csv(fEng,["Date","Area","Sub-Area","Status","Description"],r=>[r.date,r.area,r.subArea,r.status||"open",r.description],"Engineering")}><Icon name="download" size={14}/> CSV</button>
+          </div>
+          {fEng.length===0 ? <div className="empty"><div className="ee">🔍</div>No issues found.</div> :
+            fEng.map(e => <EngCard key={e.id} issue={e} onToggle={onToggle} isAdmin={true} />)}
+        </div>
+      )}
+
+      {sub==="targets" && (
+        <div className="card pad">
+          <div className="section-head">
+            <span className="bar" style={{background:"var(--info)"}}/><span className="st" style={{color:"var(--info)"}}>Targets</span>
+            <button className="btn btn-ghost btn-sm right" onClick={()=>csv(fTargets,["Date","Supervisor","Area","Welding","Fit-Up","TP"],r=>[r.date,r.supervisor,r.area,r.weldTarget,r.fitUpTarget,r.tpCompletion],"Targets")}><Icon name="download" size={14}/> CSV</button>
+          </div>
+          {fTargets.length===0 ? <div className="empty"><div className="ee">🔍</div>No targets found.</div> :
+            <div className="tbl-wrap">
+              <table className="tbl">
+                <thead><tr>{["Date","Sup.","Area","Weld","Fit","TP"].map(h=><th key={h} className={["Weld","Fit","TP"].includes(h)?"num":""}>{h}</th>)}</tr></thead>
+                <tbody>{fTargets.map(t=>(
+                  <tr key={t.id}>
+                    <td style={{ color:"var(--text-2)", fontSize:12 }}>{t.date.slice(5)}</td>
+                    <td style={{ fontWeight:600 }}>{t.supervisor}</td>
+                    <td><span className="chip area">{t.area}</span></td>
+                    <td className="num" style={{ color:"var(--info)", fontWeight:700 }}>{t.weldTarget!=="-"?t.weldTarget+"″":"—"}</td>
+                    <td className="num" style={{ color:"var(--info)", fontWeight:700 }}>{t.fitUpTarget!=="-"?t.fitUpTarget+"″":"—"}</td>
+                    <td className="num" style={{ color:"var(--info)", fontWeight:700 }}>{t.tpCompletion!=="-"?t.tpCompletion:"—"}</td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>}
+        </div>
+      )}
+
+      {sub==="manage" && (
+        <div>
+          {/* ── TEAM ── */}
+          <div className="card pad">
+            <div className="section-head"><span className="bar"/><span className="st"><Icon name="user" size={13} style={{verticalAlign:"-2px"}}/> Team · supervisors</span>
+              <span className="right count-pill">{supervisors.length}</span></div>
+
+            {supervisors.map(name => {
+              const isAdmin = name===ADMIN_USER;
+              const renaming = nameEdit[name] !== undefined;
+              return (
+                <div key={name} className="mgmt-row">
+                  <Avatar name={name} size={38} />
+                  <div style={{ flex:1, minWidth:0 }}>
+                    {renaming
+                      ? <input className="input" style={{ minHeight:40, fontSize:14 }} autoFocus value={nameEdit[name]}
+                          onChange={e=>setNameEdit(s=>({ ...s, [name]:e.target.value }))}
+                          onKeyDown={e=>e.key==="Enter"&&saveRename(name)} />
+                      : <div style={{ fontSize:15, fontWeight:700, display:"flex", alignItems:"center", gap:6 }}>
+                          {name} {isAdmin && <span className="pill" style={{ background:"var(--accent-soft)", color:"var(--accent)" }}>Admin</span>}
+                        </div>}
+                    <div style={{ fontSize:11, color:"var(--text-3)", marginTop:2 }}>Password: <code>{users[name]||"—"}</code></div>
+                  </div>
+                  {renaming
+                    ? <div style={{ display:"flex", gap:6 }}>
+                        <button className="sq ok" onClick={()=>saveRename(name)}><Icon name="check" size={15}/></button>
+                        <button className="sq" onClick={()=>setNameEdit(s=>{ const c={...s}; delete c[name]; return c; })}><Icon name="x" size={14}/></button>
+                      </div>
+                    : <div style={{ display:"flex", gap:6 }}>
+                        <button className="sq" title="Rename" onClick={()=>setNameEdit(s=>({ ...s, [name]:name }))}><Icon name="settings" size={15}/></button>
+                        {!isAdmin && <button className="sq danger" title="Remove" onClick={()=>setConfirmDel(name)}><Icon name="trash" size={14}/></button>}
+                      </div>}
+                </div>
+              );
+            })}
+
+            {/* set password inline */}
+            <div className="subpanel" style={{ marginTop:14, marginBottom:0 }}>
+              <div className="sp-title"><Icon name="key" size={14}/> Set / reset a password</div>
+              {supervisors.map(name => (
+                <div key={name} style={{ display:"flex", alignItems:"center", gap:10, padding:"7px 0" }}>
+                  <span style={{ flex:1, fontSize:13, fontWeight:600 }}>{name}</span>
+                  <input className="input" style={{ width:120, minHeight:40, fontSize:13 }} value={pwEdit[name]||""}
+                    onChange={e=>setPwEdit(s=>({ ...s, [name]:e.target.value }))} placeholder="New password" />
+                  <button className="sq ok" disabled={!(pwEdit[name]||"").trim()} onClick={()=>savePw(name)}><Icon name="check" size={15}/></button>
+                </div>
+              ))}
+            </div>
+
+            {/* add supervisor */}
+            <div className="subpanel" style={{ marginTop:12, marginBottom:0, borderStyle:"dashed", borderColor:"var(--primary-soft)" }}>
+              <div className="sp-title"><Icon name="plus" size={14}/> Add supervisor</div>
+              <div style={{ display:"flex", gap:9 }}>
+                <input className="input" style={{ flex:1.4 }} value={newSup} onChange={e=>setNewSup(e.target.value)} placeholder="Name" onKeyDown={e=>e.key==="Enter"&&addSup()} />
+                <input className="input" style={{ flex:1 }} value={newSupPw} onChange={e=>setNewSupPw(e.target.value)} placeholder="Password" onKeyDown={e=>e.key==="Enter"&&addSup()} />
+              </div>
+              <button className="btn btn-primary btn-block" style={{ marginTop:11 }} onClick={addSup}><Icon name="plus" size={16}/> Add supervisor</button>
+            </div>
+          </div>
+
+          {/* ── AREAS & SUB-AREAS ── */}
+          <div className="card pad" style={{ marginTop:14 }}>
+            <div className="section-head"><span className="bar"/><span className="st"><Icon name="target" size={13} style={{verticalAlign:"-2px"}}/> Areas &amp; sub-areas</span>
+              <span className="right count-pill">{areas.length}</span></div>
+
+            {areas.map(a => {
+              const renaming = areaEdit[a] !== undefined;
+              const used = reports.some(r=>r.area===a) || engIssues.some(e=>e.area===a) || targets.some(t=>t.area===a);
+              const subs = subAreas[a] || [];
+              return (
+                <div key={a} className="sa-group">
+                  <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                    {renaming
+                      ? <input className="input" style={{ minHeight:40, fontSize:14, flex:1 }} autoFocus value={areaEdit[a]}
+                          onChange={e=>setAreaEdit(s=>({ ...s, [a]:e.target.value }))}
+                          onKeyDown={e=>e.key==="Enter"&&saveArea(a)} />
+                      : <div style={{ flex:1, display:"flex", alignItems:"center", gap:8 }}>
+                          <span className="chip area" style={{ fontSize:13.5, fontWeight:700 }}>{a}</span>
+                          <span style={{ fontSize:11, color:"var(--text-3)" }}>{subs.length} sub{used?" · in use":""}</span>
+                        </div>}
+                    {renaming
+                      ? <div style={{ display:"flex", gap:6 }}>
+                          <button className="sq ok" onClick={()=>saveArea(a)}><Icon name="check" size={15}/></button>
+                          <button className="sq" onClick={()=>setAreaEdit(s=>{ const c={...s}; delete c[a]; return c; })}><Icon name="x" size={14}/></button>
+                        </div>
+                      : <div style={{ display:"flex", gap:6 }}>
+                          <button className="sq" onClick={()=>setAreaEdit(s=>({ ...s, [a]:a }))}><Icon name="settings" size={15}/></button>
+                          <button className="sq danger" onClick={()=>{ onRemoveArea(a); showFlash(`Area ${a} removed · records kept`); }}><Icon name="trash" size={14}/></button>
+                        </div>}
+                  </div>
+
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:7, marginTop:10 }}>
+                    {subs.map(sa => (
+                      <span key={sa} className="sa-chip">{sa}
+                        <button onClick={()=>onRemoveSubArea(a, sa)}><Icon name="x" size={11}/></button>
+                      </span>
+                    ))}
+                    {subs.length===0 && <span style={{ fontSize:12, color:"var(--text-3)" }}>No sub-areas yet</span>}
+                  </div>
+                  <div style={{ display:"flex", gap:8, marginTop:9 }}>
+                    <input className="input" style={{ flex:1, minHeight:42, fontSize:13 }} value={newSA[a]||""}
+                      onChange={e=>setNewSA(s=>({ ...s, [a]:e.target.value }))}
+                      onKeyDown={e=>e.key==="Enter"&&addSubArea(a)} placeholder={`Add sub-area to ${a}…`} />
+                    <button className="sq ok" disabled={!(newSA[a]||"").trim()} onClick={()=>addSubArea(a)}><Icon name="plus" size={16}/></button>
+                  </div>
+                </div>
+              );
+            })}
+
+            <div style={{ display:"flex", gap:9, marginTop:14 }}>
+              <input className="input" style={{ flex:1 }} value={newArea} onChange={e=>setNewArea(e.target.value)} placeholder="New area name" onKeyDown={e=>e.key==="Enter"&&addArea()} />
+              <button className="btn btn-outline" style={{ width:"auto", whiteSpace:"nowrap" }} onClick={addArea}><Icon name="plus" size={16}/> Add area</button>
+            </div>
+
+            {/* Bulk import from Excel */}
+            <div className="subpanel" style={{ marginTop:14, marginBottom:0, borderStyle:"dashed", borderColor:"var(--primary-soft)" }}>
+              <div className="sp-title"><Icon name="download" size={14}/> Import from Excel</div>
+              <p style={{ fontSize:12, color:"var(--text-2)", margin:"-4px 0 10px", lineHeight:1.5 }}>
+                Paste two columns — <strong>Area</strong> &amp; <strong>Sub-Area</strong>. Copy straight from Excel (tab-separated) or use commas. Existing items are kept; new ones are added.
+              </p>
+              <textarea className="textarea" rows={5} style={{ fontFamily:"ui-monospace, monospace", fontSize:12.5 }}
+                value={bulkText} onChange={e=>setBulkText(e.target.value)}
+                placeholder={"North-A\tPR-01\nNorth-A\tPR-02\nSLC\tPR-04\nSouth\tUnit-2"} />
+              <button className="btn btn-primary btn-block" style={{ marginTop:11 }} onClick={runImport}><Icon name="download" size={16}/> Import list</button>
+            </div>
+          </div>
+
+          {/* ── PROJECT SETTINGS ── */}
+          <div className="card pad" style={{ marginTop:14 }}>
+            <div className="section-head"><span className="bar"/><span className="st"><Icon name="settings" size={13} style={{verticalAlign:"-2px"}}/> Project identity</span></div>
+            <p style={{ fontSize:12, color:"var(--text-2)", margin:"-6px 0 14px" }}>Adapt this app to any project — shown on the header &amp; login.</p>
+            <div className="field">
+              <label className="label">Project name</label>
+              <input className="input" value={proj.name} onChange={e=>setProj(p=>({ ...p, name:e.target.value }))} placeholder="Site Follow-Up" />
+            </div>
+            <div className="field">
+              <label className="label">Header line (project / discipline)</label>
+              <input className="input" value={proj.kicker} onChange={e=>setProj(p=>({ ...p, kicker:e.target.value }))} placeholder="TR Qatar · EPC_04 Piping" />
+            </div>
+            <div className="field">
+              <label className="label">Team / company label</label>
+              <input className="input" value={proj.company} onChange={e=>setProj(p=>({ ...p, company:e.target.value }))} placeholder="EPC_04 Piping" />
+            </div>
+            <button className="btn btn-primary btn-block" onClick={()=>{ onUpdateProject(proj); showFlash("Project identity saved"); }}><Icon name="check" size={16}/> Save project identity</button>
+          </div>
+
+          <div style={{ fontSize:11, color:"var(--text-3)", textAlign:"center", padding:"16px 8px 0", lineHeight:1.6 }}>
+            ⓘ Removing a supervisor or area only takes them off the active lists.<br/>All historical records are kept for audit.
+          </div>
+        </div>
+      )}
+
+      {confirmDel && (
+        <div className="sheet-scrim" onClick={()=>setConfirmDel(null)}>
+          <div className="sheet" onClick={e=>e.stopPropagation()}>
+            <div className="grip" />
+            <div style={{ padding:"4px 6px 10px" }}>
+              <div style={{ fontSize:17, fontWeight:700, marginBottom:6 }}>Remove {confirmDel}?</div>
+              <div style={{ fontSize:13, color:"var(--text-2)", lineHeight:1.6 }}>
+                {confirmDel} will be removed from the active supervisor list and can no longer sign in.
+                Their submitted records, issues and targets are <strong>kept</strong> for audit.
+              </div>
+            </div>
+            <div style={{ display:"flex", gap:10, paddingTop:6 }}>
+              <button className="btn btn-ghost" onClick={()=>setConfirmDel(null)}>Cancel</button>
+              <button className="btn" style={{ background:"var(--danger)", color:"#fff" }} onClick={()=>removeSup(confirmDel)}><Icon name="trash" size={15}/> Remove</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+/* ════════════════════ CHAT (live polling) ════════════════════ */
+function ChatScreen({ session, supervisors, project }){
+  const [messages, setMessages] = useState([]);
+  const [text, setText] = useState("");
+  const [loading, setLoading] = useState(true);
+  const bottomRef = useRef();
+  const pollRef = useRef();
+
+  const fetchMessages = async () => {
+    const data = await sget(CHAT_KEY);
+    if(Array.isArray(data)) setMessages(data);
+    setLoading(false);
+  };
+  useEffect(() => {
+    fetchMessages();
+    pollRef.current = setInterval(fetchMessages, 5000);
+    return () => clearInterval(pollRef.current);
+  }, []);
+  useEffect(() => { if(bottomRef.current) bottomRef.current.parentNode.scrollTop = bottomRef.current.offsetTop + 999; }, [messages.length]);
+
+  const send = async () => {
+    const t = text.trim(); if(!t) return;
+    const msg = { id:makeId("C"), author:session.name, text:t, ts:new Date().toISOString() };
+    setMessages(p=>[...p, msg]); setText("");
+    await sappend(CHAT_KEY, [msg]);
+  };
+
+  const grouped = messages.map((m,i) => {
+    const prev = messages[i-1];
+    const same = prev && prev.author===m.author && (new Date(m.ts)-new Date(prev.ts) < 5*60*1000);
+    return { ...m, head:!same };
+  });
+
+  return (
+    <div className="chat-wrap">
+      <div style={{ display:"flex", alignItems:"center", gap:10, paddingBottom:12, borderBottom:"1px solid var(--border)", marginBottom:10 }}>
+        <div>
+          <div style={{ fontWeight:700, fontSize:16 }}>Team Chat</div>
+          <div style={{ fontSize:11, color:"var(--text-3)" }}>{supervisors.length} members · {project.company}</div>
+        </div>
+        <div style={{ marginLeft:"auto", display:"flex" }}>
+          {supervisors.slice(0,5).map((s,i)=>(
+            <div key={s} style={{ marginLeft:i?-9:0, border:"2px solid var(--bg)", borderRadius:"50%" }}><Avatar name={s} size={26} /></div>
+          ))}
+        </div>
+      </div>
+
+      <div className="chat-scroll">
+        {loading && messages.length===0 && <div className="empty">Loading messages…</div>}
+        {!loading && messages.length===0 && <div className="empty"><div className="ee">💬</div>No messages yet. Say hello! 👋</div>}
+        {grouped.map(m => {
+          const me = m.author === session.name;
+          return (
+            <div key={m.id} className={"msg-group" + (me?" me":"")}>
+              {m.head && (
+                <div className={"msg-head" + (me?" me":"")}>
+                  <Avatar name={m.author} size={26} />
+                  <span className="nm" style={{ color:colorFor(m.author) }}>{m.author}</span>
+                  <span className="tm">{fmtDT(m.ts)}</span>
+                </div>
+              )}
+              <div className={"bubble " + (me?"me":"them")}>{m.text}</div>
+            </div>
+          );
+        })}
+        <div ref={bottomRef} />
+      </div>
+
+      <div className="chat-input">
+        <textarea className="ci-box" rows={1} value={text} onChange={e=>setText(e.target.value)}
+          onKeyDown={e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); send(); } }}
+          placeholder="Type a message…" />
+        <button className="send" onClick={send} disabled={!text.trim()}><Icon name="send" size={19} /></button>
+      </div>
+    </div>
+  );
+}
+
+
+/* ═══════════════════ APP ═══════════════════ */
+/* Local cache so an admin's area/identity edits survive reloads even
+   before the Sheets "Areas"/"Settings" tabs exist. */
+const AREAS_CACHE = "siteapp_areas_v2";
+const PROJ_CACHE  = "siteapp_project_v2";
+const readCache = (k) => { try{ return JSON.parse(localStorage.getItem(k)); }catch{ return null; } };
+const writeCache = (k,v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} };
+
+function App(){
+  const [booting, setBooting]   = useState(true);
+  const [session, setSession]   = useState(null);
+
+  const [users, setUsers]         = useState(DEFAULT_PASSWORDS);
+  const [supervisors, setSupervisors] = useState([]);
+  const [areas, setAreas]         = useState([]);
+  const [subAreas, setSubAreas]   = useState({});
+  const [project, setProject]     = useState(DEFAULT_PROJECT);
+
+  const [reports, setReports]     = useState([]);
+  const [engIssues, setEngIssues] = useState([]);
+  const [targets, setTargets]     = useState([]);
+
+  const [tab, setTab]     = useState("report");
+  const [flash, setFlash] = useState("");
+  const [sheet, setSheet] = useState(null);
+
+  /* Login form */
+  const [loginName, setLoginName] = useState("");
+  const [loginPw, setLoginPw]     = useState("");
+  const [loginErr, setLoginErr]   = useState("");
+
+  /* ── Initial load from Sheets ── */
+  useEffect(() => {
+    (async () => {
+      const [r, e, u, t] = await Promise.all([
+        sget(STORAGE_KEY), sget(ENG_KEY), sget(USERS_KEY), sget(TARGETS_KEY),
+      ]);
+      const rep = r || [], eng = e || [], tar = t || [];
+      const usr = u || DEFAULT_PASSWORDS;
+      if(!u) await sset(USERS_KEY, DEFAULT_PASSWORDS);
+      setReports(rep); setEngIssues(eng); setTargets(tar); setUsers(usr);
+      setSupervisors(Object.keys(usr).filter(n => n !== GUEST_USER));
+
+      /* Areas + sub-areas: sheet/records, then merge local cache */
+      const loaded = await loadAreas(rep);
+      const cache = readCache(AREAS_CACHE);
+      let ar = loaded.areas, sa = loaded.subAreas;
+      if(cache && Array.isArray(cache.areas)){
+        cache.areas.forEach(a => { if(!ar.includes(a)){ ar.push(a); sa[a] = sa[a] || []; } });
+        Object.entries(cache.subAreas || {}).forEach(([a, subs]) => {
+          sa[a] = sa[a] || []; subs.forEach(s => { if(s && !sa[a].includes(s)) sa[a].push(s); });
+        });
+      }
+      setAreas(ar); setSubAreas(sa);
+
+      /* Project identity: prefer local cache, else sheet */
+      const sheetProj = await loadProject();
+      setProject(readCache(PROJ_CACHE) || sheetProj);
+
+      setBooting(false);
+    })();
+  }, []);
+
+  const showFlash = (msg) => { setFlash(msg); setTimeout(() => setFlash(""), 2600); };
+  const openCount = engIssues.filter(e => (e.status || "open") === "open").length;
+
+  /* ── Login ── */
+  const handleLogin = () => {
+    if(!loginName){ setLoginErr("Please select your name."); return; }
+    if(users[loginName] === loginPw){
+      const s = { name:loginName, isAdmin:loginName===ADMIN_USER, isGuest:loginName===GUEST_USER };
+      setSession(s); setLoginErr(""); setTab(s.isGuest ? "summary" : "report");
+    } else { setLoginErr("Incorrect password."); setLoginPw(""); }
+  };
+  const signOut = () => { setSession(null); setLoginName(""); setLoginPw(""); setTab("report"); setSheet(null); };
+
+  /* ── Data writes (Sheets) ── */
+  const submitReports = async (entries) => { setReports(p => [...entries, ...p]); await sappend(STORAGE_KEY, entries); };
+  const deleteReport  = async (id) => { setReports(p => p.filter(r => r.id !== id)); await sdelete(STORAGE_KEY, id); };
+  const submitTargets = async (entries) => { setTargets(p => [...entries, ...p]); await sappend(TARGETS_KEY, entries); };
+  const submitEng     = async (entries) => { setEngIssues(p => [...entries, ...p]); await sappend(ENG_KEY, entries); };
+  const toggleEng     = async (id) => {
+    const issue = engIssues.find(e => e.id === id); if(!issue) return;
+    const status = (issue.status || "open") === "resolved" ? "open" : "resolved";
+    const resolvedAt = status === "resolved" ? fmtForSheet() : "";
+    setEngIssues(p => p.map(e => e.id === id ? { ...e, status, resolvedAt } : e));
+    await supdateStatus(id, status, resolvedAt);
+  };
+
+  /* ── Team management → Users sheet ── */
+  const persistUsers = (next) => { setUsers(next); sset(USERS_KEY, next); };
+  const addSup = (name, pw) => {
+    setSupervisors(p => p.includes(name) ? p : [...p, name]);
+    persistUsers({ ...users, [name]: pw });
+  };
+  const removeSup = (name) => {
+    if(name === ADMIN_USER) return;
+    setSupervisors(p => p.filter(s => s !== name));
+    const c = { ...users }; delete c[name]; persistUsers(c);
+  };
+  const renameSup = (oldN, newN) => {
+    setSupervisors(p => p.map(s => s === oldN ? newN : s));
+    const c = { ...users }; c[newN] = c[oldN]; delete c[oldN]; persistUsers(c);
+  };
+  const setPassword = (name, pw) => persistUsers({ ...users, [name]: pw });
+
+  /* ── Area / sub-area management → Areas sheet + cache ── */
+  const applyAreas = (nextAreas, nextSubs) => {
+    setAreas(nextAreas); setSubAreas(nextSubs);
+    writeCache(AREAS_CACHE, { areas:nextAreas, subAreas:nextSubs });
+    saveAreas(nextAreas, nextSubs);
+  };
+  const addArea = (a) => { if(areas.includes(a)) return; applyAreas([...areas, a], { ...subAreas, [a]: subAreas[a] || [] }); };
+  const removeArea = (a) => { const s = { ...subAreas }; delete s[a]; applyAreas(areas.filter(x => x !== a), s); };
+  const renameArea = (oldA, newA) => {
+    const s = { ...subAreas }; if(s[oldA]){ s[newA] = s[oldA]; delete s[oldA]; }
+    applyAreas(areas.map(x => x === oldA ? newA : x), s);
+  };
+  const addSubArea = (area, sa) => {
+    const nextA = areas.includes(area) ? areas : [...areas, area];
+    applyAreas(nextA, { ...subAreas, [area]: [...(subAreas[area] || []), sa] });
+  };
+  const removeSubArea = (area, sa) => applyAreas(areas, { ...subAreas, [area]: (subAreas[area] || []).filter(x => x !== sa) });
+  const importAreaMap = (pairs) => {
+    const a = [...areas], s = { ...subAreas };
+    pairs.forEach(([ar, sa]) => {
+      if(!ar) return;
+      if(!a.includes(ar)) a.push(ar);
+      s[ar] = [...(s[ar] || [])];
+      if(sa && !s[ar].includes(sa)) s[ar].push(sa);
+    });
+    applyAreas(a, s);
+  };
+
+  /* ── Project identity → Settings sheet + cache ── */
+  const updateProject = (obj) => { setProject(obj); writeCache(PROJ_CACHE, obj); saveProject(obj); };
+
+  /* ── Boot splash ── */
+  if(booting){
+    return <div className="boot"><div className="spin" /><div>Loading site data…</div></div>;
+  }
+
+  /* ── Login ── */
+  if(!session){
+    const loginUsers = [GUEST_USER, ...supervisors.slice().sort((a, b) => a.localeCompare(b))];
+    return (
+      <div className="login">
+        <div className="lg-top">
+          <div className="lg-logo"><Icon name="flame" size={36} color="#fff" /></div>
+          <div className="lg-kicker">{project.kicker}</div>
+          <div className="lg-title">{project.name}</div>
+          <div className="lg-tag">Daily manpower, targets &amp; engineering — one place.</div>
+        </div>
+        <div className="lg-card">
+          <h3>Sign in</h3>
+          <p>Select your name and enter your password.</p>
+          {loginErr && <div className="alert">{loginErr}</div>}
+          <div className="field">
+            <label className="label">Name</label>
+            <select className="select" value={loginName} onChange={e => { setLoginName(e.target.value); setLoginErr(""); }}>
+              <option value="">— Select —</option>
+              {loginUsers.map(s => <option key={s}>{s}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label className="label">Password</label>
+            <input type="password" className="input" value={loginPw}
+              onChange={e => { setLoginPw(e.target.value); setLoginErr(""); }}
+              onKeyDown={e => e.key === "Enter" && handleLogin()} placeholder="Enter your password" />
+          </div>
+          <button className="btn btn-primary btn-block" onClick={handleLogin}>Sign in →</button>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Nav items by role ── */
+  const navItems = session.isGuest
+    ? [{ id:"summary", label:"Summary", icon:"summary" }]
+    : [
+        { id:"report",      label:"Report",  icon:"report" },
+        { id:"target",      label:"Target",  icon:"target" },
+        { id:"engineering", label:"Issues",  icon:"eng", badge:openCount },
+        { id:"summary",     label:"Summary", icon:"summary" },
+        { id:"chat",        label:"Chat",    icon:"chat" },
+      ];
+
+  return (
+    <div className="app">
+      <TopBar session={session} project={project} openCount={openCount}
+        onProfile={() => setSheet("profile")}
+        onRecords={() => setTab("records")}
+        onBell={() => setTab("engineering")} />
+
+      <Flash msg={flash} />
+
+      <div className="screen" key={tab}>
+        {tab === "report" && (
+          <ReportScreen session={session} reports={reports} supervisors={supervisors}
+            areas={areas} subAreas={subAreas} onAddSubArea={addSubArea}
+            onSubmit={submitReports} onDelete={deleteReport} showFlash={showFlash} />
+        )}
+        {tab === "target" && (
+          <TargetScreen session={session} reports={reports} supervisors={supervisors}
+            areas={areas} onSubmit={submitTargets} showFlash={showFlash} />
+        )}
+        {tab === "engineering" && (
+          <EngScreen session={session} engIssues={engIssues}
+            areas={areas} subAreas={subAreas} onAddSubArea={addSubArea}
+            onSubmit={submitEng} onToggle={toggleEng} showFlash={showFlash} />
+        )}
+        {tab === "summary" && (
+          <SummaryScreen session={session} reports={reports} targets={targets}
+            engIssues={engIssues} onToggle={toggleEng} />
+        )}
+        {tab === "chat" && (
+          <ChatScreen session={session} supervisors={supervisors} project={project} />
+        )}
+        {tab === "records" && session.isAdmin && (
+          <RecordsScreen session={session} reports={reports} targets={targets} engIssues={engIssues}
+            supervisors={supervisors} areas={areas} subAreas={subAreas} users={users} project={project}
+            onToggle={toggleEng} onDeleteReport={deleteReport}
+            onAddSup={addSup} onRemoveSup={removeSup} onRenameSup={renameSup} onSetPw={setPassword}
+            onAddArea={addArea} onRemoveArea={removeArea} onRenameArea={renameArea}
+            onAddSubArea={addSubArea} onRemoveSubArea={removeSubArea} onImportAreaMap={importAreaMap}
+            onUpdateProject={updateProject} showFlash={showFlash} />
+        )}
+      </div>
+
+      <BottomNav tab={tab} setTab={setTab} items={navItems} />
+
+      {sheet === "profile" && (
+        <Sheet onClose={() => setSheet(null)}>
+          <div style={{ display:"flex", alignItems:"center", gap:13, padding:"6px 6px 16px" }}>
+            <Avatar name={session.name} size={52} />
+            <div>
+              <div style={{ fontSize:18, fontWeight:700 }}>{session.name}</div>
+              <div style={{ fontSize:12, color:"var(--text-2)" }}>
+                {session.isAdmin ? "Administrator" : session.isGuest ? "Guest · view only" : "Site Supervisor"}
+              </div>
+            </div>
+          </div>
+          {session.isAdmin && (
+            <div className="s-row" onClick={() => { setTab("records"); setSheet(null); }}>
+              <div className="s-ico"><Icon name="records" size={19} /></div> Records &amp; exports
+            </div>
+          )}
+          <div className="s-row danger" onClick={signOut}>
+            <div className="s-ico"><Icon name="logout" size={19} /></div> Sign out
+          </div>
+        </Sheet>
+      )}
+    </div>
+  );
+}
+
+
+/* ---- Mount ---- */
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
