@@ -343,6 +343,11 @@ const STR_TR = {
   "Filters":"Filtreler", "Clear filters":"Filtreleri temizle", "All":"Tümü",
   "⚙ Manage":"⚙ Yönetim", "Targets":"Hedefler",
   "Administration":"Yönetim", "Manage team, areas & roles":"Takım, alanlar & roller yönetimi",
+  "Add":"Ekle", "Delete":"Sil", "Role name":"Rol adı",
+  "already exists":"zaten var", "not found":"bulunamadı", "added":"eklendi", "removed":"silindi",
+  "Enter an area":"Bir alan girin", "Enter a role name":"Bir rol adı girin",
+  "Add or remove one Area + Sub-Area at a time. Full list lives in the Google Sheet.":"Tek tek Alan + Alt-Alan ekle/sil. Tam liste Google Sheet'te.",
+  "Add or remove one role at a time. Pick a group, type the role.":"Tek tek rol ekle/sil. Grup seç, rol yaz.",
   "Team chat":"Takım sohbeti", "members":"üye",
   "No messages yet. Say hello! 👋":"Henüz mesaj yok. Merhaba deyin! 👋", "Loading messages…":"Mesajlar yükleniyor…",
   "Type a message…":"Mesaj yazın…",
@@ -1099,6 +1104,41 @@ function RecordsScreen({ session, reports, targets, engIssues, supervisors, area
   const [bulkText, setBulkText] = useState("");
   const [proj, setProj] = useState(project);
   const [confirmDel, setConfirmDel] = useState(null);
+  const [aSub, setASub] = useState("");
+  const [rGroup, setRGroup] = useState("direct");
+  const [rName, setRName] = useState("");
+  const addPair = () => {
+    const a = newArea.trim(), sa = aSub.trim();
+    if(!a){ showFlash(t("Enter an area")); return; }
+    const exists = (subAreas[a]||[]).some(x=>x.toLowerCase()===sa.toLowerCase());
+    if(sa && exists){ showFlash(a + " / " + sa + " " + t("already exists")); return; }
+    if(!sa && areas.includes(a)){ showFlash(a + " " + t("already exists")); return; }
+    if(sa) onAddSubArea(a, sa); else onAddArea(a);
+    showFlash(a + (sa ? " / " + sa : "") + " " + t("added")); setNewArea(""); setASub("");
+  };
+  const delPair = () => {
+    const a = newArea.trim(), sa = aSub.trim();
+    if(!a){ showFlash(t("Enter an area")); return; }
+    if(!areas.includes(a)){ showFlash(a + " " + t("not found")); return; }
+    if(sa){
+      const real = (subAreas[a]||[]).find(x=>x.toLowerCase()===sa.toLowerCase());
+      if(!real){ showFlash(a + " / " + sa + " " + t("not found")); return; }
+      onRemoveSubArea(a, real); showFlash(a + " / " + real + " " + t("removed"));
+    } else { onRemoveArea(a); showFlash(a + " " + t("removed")); }
+    setNewArea(""); setASub("");
+  };
+  const findRoleByName = (gid, name) => { const g = roleGroups.find(x=>x.id===gid); return g ? (g.roles.find(r=>r.label.toLowerCase()===name.toLowerCase()) || null) : null; };
+  const addRolePair = () => {
+    const n = rName.trim(); if(!n){ showFlash(t("Enter a role name")); return; }
+    if(findRoleByName(rGroup, n)){ showFlash(n + " " + t("already exists")); return; }
+    onAddRole(rGroup, n); showFlash(n + " " + t("added")); setRName("");
+  };
+  const delRolePair = () => {
+    const n = rName.trim(); if(!n){ showFlash(t("Enter a role name")); return; }
+    const role = findRoleByName(rGroup, n);
+    if(!role){ showFlash(n + " " + t("not found")); return; }
+    onRemoveRole(rGroup, role.key); showFlash(role.label + " " + t("removed")); setRName("");
+  };
   const [newRole, setNewRole] = useState({});
   const [roleEdit, setRoleEdit] = useState({});
 
@@ -1331,19 +1371,6 @@ function RecordsScreen({ session, reports, targets, engIssues, supervisors, area
               );
             })}
 
-            {/* set password inline */}
-            <div className="subpanel" style={{ marginTop:14, marginBottom:0 }}>
-              <div className="sp-title"><Icon name="key" size={14}/> Set / reset a password</div>
-              {supervisors.map(name => (
-                <div key={name} style={{ display:"flex", alignItems:"center", gap:10, padding:"7px 0" }}>
-                  <span style={{ flex:1, fontSize:13, fontWeight:600 }}>{name}</span>
-                  <input className="input" style={{ width:120, minHeight:40, fontSize:13 }} value={pwEdit[name]||""}
-                    onChange={e=>setPwEdit(s=>({ ...s, [name]:e.target.value }))} placeholder="New password" />
-                  <button className="sq ok" disabled={!(pwEdit[name]||"").trim()} onClick={()=>savePw(name)}><Icon name="check" size={15}/></button>
-                </div>
-              ))}
-            </div>
-
             {/* add supervisor */}
             <div className="subpanel" style={{ marginTop:12, marginBottom:0, borderStyle:"dashed", borderColor:"var(--primary-soft)" }}>
               <div className="sp-title"><Icon name="plus" size={14}/> Add supervisor</div>
@@ -1355,120 +1382,36 @@ function RecordsScreen({ session, reports, targets, engIssues, supervisors, area
             </div>
           </div>
 
-          {/* ── AREAS & SUB-AREAS ── */}
+          {/* ── AREAS & SUB-AREAS (compact) ── */}
           <div className="card pad" style={{ marginTop:14 }}>
             <div className="section-head"><span className="bar"/><span className="st"><Icon name="target" size={13} style={{verticalAlign:"-2px"}}/> Areas &amp; sub-areas</span>
               <span className="right count-pill">{areas.length}</span></div>
-
-            {areas.map(a => {
-              const renaming = areaEdit[a] !== undefined;
-              const used = reports.some(r=>r.area===a) || engIssues.some(e=>e.area===a) || targets.some(t=>t.area===a);
-              const subs = sortSubs(subAreas[a]);
-              return (
-                <div key={a} className="sa-group">
-                  <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                    {renaming
-                      ? <input className="input" style={{ minHeight:40, fontSize:14, flex:1 }} autoFocus value={areaEdit[a]}
-                          onChange={e=>setAreaEdit(s=>({ ...s, [a]:e.target.value }))}
-                          onKeyDown={e=>e.key==="Enter"&&saveArea(a)} />
-                      : <div style={{ flex:1, display:"flex", alignItems:"center", gap:8 }}>
-                          <span className="chip area" style={{ fontSize:13.5, fontWeight:700 }}>{a}</span>
-                          <span style={{ fontSize:11, color:"var(--text-3)" }}>{subs.length} sub{used?" · in use":""}</span>
-                        </div>}
-                    {renaming
-                      ? <div style={{ display:"flex", gap:6 }}>
-                          <button className="sq ok" onClick={()=>saveArea(a)}><Icon name="check" size={15}/></button>
-                          <button className="sq" onClick={()=>setAreaEdit(s=>{ const c={...s}; delete c[a]; return c; })}><Icon name="x" size={14}/></button>
-                        </div>
-                      : <div style={{ display:"flex", gap:6 }}>
-                          <button className="sq" onClick={()=>setAreaEdit(s=>({ ...s, [a]:a }))}><Icon name="settings" size={15}/></button>
-                          <button className="sq danger" onClick={()=>{ onRemoveArea(a); showFlash(`Area ${a} removed · records kept`); }}><Icon name="trash" size={14}/></button>
-                        </div>}
-                  </div>
-
-                  <div style={{ display:"flex", flexWrap:"wrap", gap:7, marginTop:10 }}>
-                    {subs.map(sa => (
-                      <span key={sa} className="sa-chip">{sa}
-                        <button onClick={()=>onRemoveSubArea(a, sa)}><Icon name="x" size={11}/></button>
-                      </span>
-                    ))}
-                    {subs.length===0 && <span style={{ fontSize:12, color:"var(--text-3)" }}>No sub-areas yet</span>}
-                  </div>
-                  <div style={{ display:"flex", gap:8, marginTop:9 }}>
-                    <input className="input" style={{ flex:1, minHeight:42, fontSize:13 }} value={newSA[a]||""}
-                      onChange={e=>setNewSA(s=>({ ...s, [a]:e.target.value }))}
-                      onKeyDown={e=>e.key==="Enter"&&addSubArea(a)} placeholder={`Add sub-area to ${a}…`} />
-                    <button className="sq ok" disabled={!(newSA[a]||"").trim()} onClick={()=>addSubArea(a)}><Icon name="plus" size={16}/></button>
-                  </div>
-                </div>
-              );
-            })}
-
-            <div style={{ display:"flex", gap:9, marginTop:14 }}>
-              <input className="input" style={{ flex:1 }} value={newArea} onChange={e=>setNewArea(e.target.value)} placeholder="New area name" onKeyDown={e=>e.key==="Enter"&&addArea()} />
-              <button className="btn btn-outline" style={{ width:"auto", whiteSpace:"nowrap" }} onClick={addArea}><Icon name="plus" size={16}/> Add area</button>
+            <p style={{ fontSize:12, color:"var(--text-2)", margin:"-6px 0 12px" }}>{t("Add or remove one Area + Sub-Area at a time. Full list lives in the Google Sheet.")}</p>
+            <div className="grid-2" style={{ gap:9 }}>
+              <input className="input" value={newArea} onChange={e=>setNewArea(e.target.value)} placeholder={t("Area")} />
+              <input className="input" value={aSub} onChange={e=>setASub(e.target.value)} placeholder={t("Sub-Area")} />
             </div>
-
-            {/* Bulk import from Excel */}
-            <div className="subpanel" style={{ marginTop:14, marginBottom:0, borderStyle:"dashed", borderColor:"var(--primary-soft)" }}>
-              <div className="sp-title"><Icon name="download" size={14}/> Import from Excel</div>
-              <p style={{ fontSize:12, color:"var(--text-2)", margin:"-4px 0 10px", lineHeight:1.5 }}>
-                Paste two columns — <strong>Area</strong> &amp; <strong>Sub-Area</strong>. Copy straight from Excel (tab-separated) or use commas. Existing items are kept; new ones are added.
-              </p>
-              <textarea className="textarea" rows={5} style={{ fontFamily:"ui-monospace, monospace", fontSize:12.5 }}
-                value={bulkText} onChange={e=>setBulkText(e.target.value)}
-                placeholder={"North-A\tPR-01\nNorth-A\tPR-02\nSLC\tPR-04\nSouth\tUnit-2"} />
-              <button className="btn btn-primary btn-block" style={{ marginTop:11 }} onClick={runImport}><Icon name="download" size={16}/> Import list</button>
+            <div style={{ display:"flex", gap:9, marginTop:9 }}>
+              <button className="btn btn-primary" style={{ flex:1 }} onClick={addPair}><Icon name="plus" size={16}/> {t("Add")}</button>
+              <button className="btn" style={{ flex:1, background:"var(--danger-soft)", color:"var(--danger)", border:"1px solid var(--danger)" }} onClick={delPair}><Icon name="trash" size={15}/> {t("Delete")}</button>
             </div>
           </div>
 
-          {/* ── MANPOWER ROLES ── */}
+          {/* ── MANPOWER ROLES (compact) ── */}
           <div className="card pad" style={{ marginTop:14 }}>
             <div className="section-head"><span className="bar"/><span className="st"><Icon name="user" size={13} style={{verticalAlign:"-2px"}}/> Manpower roles</span>
               <span className="right count-pill">{roleGroups.reduce((s,g)=>s+g.roles.length,0)}</span></div>
-            <p style={{ fontSize:12, color:"var(--text-2)", margin:"-6px 0 14px" }}>The crew types supervisors fill in on the Report screen. Three fixed groups — add the roles each project needs.</p>
-
-            {roleGroups.map(g => (
-              <div key={g.id} className="sa-group">
-                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
-                  <span className={"man-gtag " + g.id}>{g.label}</span>
-                  <span style={{ fontSize:11, color:"var(--text-3)" }}>{g.roles.length} role{g.roles.length===1?"":"s"}</span>
-                </div>
-                {g.roles.map(role => {
-                  const ek = g.id + ":" + role.key;
-                  const renaming = roleEdit[ek] !== undefined;
-                  const used = reports.some(r => roleVal(r, role.key) > 0);
-                  return (
-                    <div key={role.key} className="mgmt-row">
-                      {renaming
-                        ? <input className="input" style={{ minHeight:40, fontSize:14, flex:1 }} autoFocus value={roleEdit[ek]}
-                            onChange={e=>setRoleEdit(s=>({ ...s, [ek]:e.target.value }))}
-                            onKeyDown={e=>{ if(e.key==="Enter"){ onRenameRole(g.id, role.key, roleEdit[ek]); setRoleEdit(s=>{ const c={...s}; delete c[ek]; return c; }); showFlash("Role renamed"); } }} />
-                        : <div style={{ flex:1, display:"flex", alignItems:"center", gap:8 }}>
-                            <span style={{ fontSize:14, fontWeight:600 }}>{role.label}</span>
-                            {used && <span style={{ fontSize:10.5, color:"var(--text-3)" }}>in use</span>}
-                          </div>}
-                      {renaming
-                        ? <div style={{ display:"flex", gap:6 }}>
-                            <button className="sq ok" onClick={()=>{ onRenameRole(g.id, role.key, roleEdit[ek]); setRoleEdit(s=>{ const c={...s}; delete c[ek]; return c; }); showFlash("Role renamed"); }}><Icon name="check" size={15}/></button>
-                            <button className="sq" onClick={()=>setRoleEdit(s=>{ const c={...s}; delete c[ek]; return c; })}><Icon name="x" size={14}/></button>
-                          </div>
-                        : <div style={{ display:"flex", gap:6 }}>
-                            <button className="sq" onClick={()=>setRoleEdit(s=>({ ...s, [ek]:role.label }))}><Icon name="settings" size={15}/></button>
-                            <button className="sq danger" onClick={()=>{ onRemoveRole(g.id, role.key); showFlash(`${role.label} removed · records kept`); }}><Icon name="trash" size={14}/></button>
-                          </div>}
-                    </div>
-                  );
-                })}
-                <div style={{ display:"flex", gap:8, marginTop:9 }}>
-                  <input className="input" style={{ flex:1, minHeight:42, fontSize:13 }} value={newRole[g.id]||""}
-                    onChange={e=>setNewRole(s=>({ ...s, [g.id]:e.target.value }))}
-                    onKeyDown={e=>{ if(e.key==="Enter" && (newRole[g.id]||"").trim()){ onAddRole(g.id, newRole[g.id]); setNewRole(s=>({ ...s, [g.id]:"" })); showFlash("Role added"); } }}
-                    placeholder={`Add ${g.label.toLowerCase()} role…`} />
-                  <button className="sq ok" disabled={!(newRole[g.id]||"").trim()} onClick={()=>{ onAddRole(g.id, newRole[g.id]); setNewRole(s=>({ ...s, [g.id]:"" })); showFlash("Role added"); }}><Icon name="plus" size={16}/></button>
-                </div>
-              </div>
-            ))}
+            <p style={{ fontSize:12, color:"var(--text-2)", margin:"-6px 0 12px" }}>{t("Add or remove one role at a time. Pick a group, type the role.")}</p>
+            <div style={{ display:"flex", gap:9 }}>
+              <select className="select" style={{ flex:"0 0 40%" }} value={rGroup} onChange={e=>setRGroup(e.target.value)}>
+                {roleGroups.map(g=><option key={g.id} value={g.id}>{g.label}</option>)}
+              </select>
+              <input className="input" style={{ flex:1 }} value={rName} onChange={e=>setRName(e.target.value)} placeholder={t("Role name")} />
+            </div>
+            <div style={{ display:"flex", gap:9, marginTop:9 }}>
+              <button className="btn btn-primary" style={{ flex:1 }} onClick={addRolePair}><Icon name="plus" size={16}/> {t("Add")}</button>
+              <button className="btn" style={{ flex:1, background:"var(--danger-soft)", color:"var(--danger)", border:"1px solid var(--danger)" }} onClick={delRolePair}><Icon name="trash" size={15}/> {t("Delete")}</button>
+            </div>
           </div>
 
           {/* ── PROJECT SETTINGS ── */}
@@ -1608,7 +1551,7 @@ const readCache = (k) => { try{ return JSON.parse(localStorage.getItem(k)); }cat
 const writeCache = (k,v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} };
 
 function App(){
-  const APP_VERSION = "v2026.06.20 · build 5";
+  const APP_VERSION = "v2026.06.20 · build 6";
   const [lang, setLangState] = useState(LANG);
   LANG = lang;
   const toggleLang = () => { const nx = lang === "tr" ? "en" : "tr"; LANG = nx; setLangState(nx); try{ localStorage.setItem("siteapp_lang", nx); }catch(e){} };
