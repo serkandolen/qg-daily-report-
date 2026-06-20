@@ -486,7 +486,7 @@ function EngCard({ issue, onToggle, isAdmin }){
         <div className="resolved-stamp">
           <Icon name="check" size={15} /> Resolved · {issue.resolvedAt}
         </div>}
-      {issue.photos && issue.photos.length > 0 &&
+      {Array.isArray(issue.photos) && issue.photos.length > 0 &&
         <div className="eng-photos">
           {issue.photos.map((ph,i) => <img key={i} src={ph} onClick={()=>setLb(ph)} alt="" />)}
         </div>}
@@ -1840,7 +1840,7 @@ class ScreenGuard extends React.Component {
 }
 
 function App(){
-  const APP_VERSION = "v2026.06.20 · build 21";
+  const APP_VERSION = "v2026.06.20 · build 22";
   const [lang, setLangState] = useState(LANG);
   LANG = lang;
   const toggleLang = () => { const nx = lang === "tr" ? "en" : "tr"; LANG = nx; setLangState(nx); try{ localStorage.setItem("siteapp_lang", nx); }catch(e){} };
@@ -1881,7 +1881,7 @@ function App(){
         sget(STORAGE_KEY), sget(ENG_KEY), sget(USERS_KEY), sget(TARGETS_KEY),
       ]);
       const rep = (r || []).map(x => ({ ...x, date: dOnly(x.date) }));
-      const eng = (e || []).map(x => ({ ...x, date: dOnly(x.date) }));
+      const eng = (e || []).map(x => ({ ...x, date: dOnly(x.date), photos: Array.isArray(x.photos) ? x.photos : [] }));
       const tar = (t || []).map(x => ({ ...x, date: dOnly(x.date) }));
       const usr = u || DEFAULT_PASSWORDS;
       if(!u) await sset(USERS_KEY, DEFAULT_PASSWORDS);
