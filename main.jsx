@@ -376,7 +376,7 @@ const STR_TR = {
   "Update":"Güncelle", "Field remarks…":"Saha açıklaması…",
   "No punch list yet. Admin pastes it into the Punch sheet.":"Henüz punch listesi yok. Admin Punch sayfasına yapıştırır.",
   "Search code, description, subsystem…":"Kod, açıklama, subsystem ara…",
-  "Status":"Durum", "Add photo":"Fotoğraf ekle", "Change photo":"Fotoğrafı değiştir", "Save":"Kaydet",
+  "Status":"Durum", "Add photo":"Fotoğraf ekle", "Change photo":"Fotoğrafı değiştir", "Save":"Kaydet", "Show more":"Daha fazla göster",
   "Team chat":"Takım sohbeti", "members":"üye",
   "No messages yet. Say hello! 👋":"Henüz mesaj yok. Merhaba deyin! 👋", "Loading messages…":"Mesajlar yükleniyor…",
   "Type a message…":"Mesaj yazın…",
@@ -1125,6 +1125,8 @@ function PunchScreen({ session, punches, onUpdate }){
   const [cat, setCat] = useState("all");
   const [area, setArea] = useState("all");
   const [q, setQ] = useState("");
+  const [shown, setShown] = useState(100);
+  useEffect(() => { setShown(100); }, [filter, cat, area, q]);
   const [groupBy, setGroupBy] = useState("category");
   const canEdit = !session.isGuest;
 
@@ -1218,7 +1220,12 @@ function PunchScreen({ session, punches, onUpdate }){
             )}
           </div>
           <div style={{ fontSize:11, color:"var(--text-3)", marginBottom:10 }}>{list.length} / {items.length}</div>
-          {list.map(p => <PunchRow key={p.code} p={p} canEdit={canEdit} onUpdate={onUpdate} />)}
+          {list.slice(0, shown).map(p => <PunchRow key={p.code} p={p} canEdit={canEdit} onUpdate={onUpdate} />)}
+          {list.length > shown && (
+            <button className="btn btn-ghost btn-block" style={{ marginTop:8 }} onClick={()=>setShown(shown+100)}>
+              {t("Show more")} ({list.length - shown})
+            </button>
+          )}
         </>
       )}
     </div>
@@ -1812,8 +1819,28 @@ const ROLES_CACHE = "siteapp_roles_v2";
 const readCache = (k) => { try{ return JSON.parse(localStorage.getItem(k)); }catch{ return null; } };
 const writeCache = (k,v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} };
 
+class ScreenGuard extends React.Component {
+  constructor(props){ super(props); this.state = { err:null }; }
+  static getDerivedStateFromError(err){ return { err }; }
+  componentDidUpdate(prev){ if(prev.tab !== this.props.tab && this.state.err) this.setState({ err:null }); }
+  render(){
+    if(this.state.err){
+      const tr = this.props.lang === "tr";
+      return (
+        <div className="empty" style={{ padding:"40px 20px" }}>
+          <div className="ee">⚠️</div>
+          <div style={{ fontWeight:700, color:"var(--text)", marginBottom:6 }}>{tr ? "Bu ekran yüklenemedi" : "This screen failed to load"}</div>
+          <div style={{ fontSize:12.5, marginBottom:14 }}>{tr ? "Başka bir sekmeye geçip tekrar deneyin." : "Switch to another tab and try again."}</div>
+          <div style={{ fontSize:10.5, color:"var(--text-3)", wordBreak:"break-word", maxWidth:340, margin:"0 auto" }}>{String(this.state.err && this.state.err.message || this.state.err)}</div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function App(){
-  const APP_VERSION = "v2026.06.20 · build 19";
+  const APP_VERSION = "v2026.06.20 · build 21";
   const [lang, setLangState] = useState(LANG);
   LANG = lang;
   const toggleLang = () => { const nx = lang === "tr" ? "en" : "tr"; LANG = nx; setLangState(nx); try{ localStorage.setItem("siteapp_lang", nx); }catch(e){} };
@@ -2048,6 +2075,7 @@ function App(){
       {!online && <div className="offline-bar">{t("No internet — changes won\u2019t be saved")}</div>}
 
       <div className="screen" key={tab}>
+        <ScreenGuard tab={tab} lang={lang}>
         {tab === "report" && (
           <ReportScreen session={session} reports={reports} supervisors={supervisors}
             areas={areas} subAreas={subAreas} roleGroups={roleGroups} onAddSubArea={addSubArea}
@@ -2093,6 +2121,7 @@ function App(){
             onUpdateProject={updateProject}
             onAddRole={addRole} onRemoveRole={removeRole} onRenameRole={renameRole} showFlash={showFlash} />
         )}
+        </ScreenGuard>
       </div>
 
       <BottomNav tab={tab} setTab={setTab} items={navItems} />
@@ -2143,4 +2172,18 @@ function App(){
 
 
 /* ---- Mount ---- */
+window.addEventListener("error", function(e){
+  try{
+    var root = document.getElementById("root");
+    if(root && (!root.firstChild || root.innerHTML.length < 40)){
+      root.innerHTML = "<div style='padding:30px 22px;font-family:sans-serif;color:#16202E'>"
+        + "<div style='font-size:30px'>⚠️</div>"
+        + "<div style='font-weight:700;margin:8px 0'>Bir hata oluştu / An error occurred</div>"
+        + "<div style='font-size:12px;color:#777;word-break:break-word'>" + String(e.message||e.error||e) + "</div>"
+        + "<div style='font-size:11px;color:#aaa;margin-top:10px'>" + String((e.error&&e.error.stack||"")).slice(0,400) + "</div>"
+        + "<button onclick='location.reload()' style='margin-top:16px;padding:10px 18px;border:none;border-radius:8px;background:#E0322E;color:#fff;font-weight:700'>Yeniden yükle</button></div>";
+    }
+  }catch(_){}
+});
+window.addEventListener("unhandledrejection", function(e){ console.error("unhandled:", e.reason); });
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
