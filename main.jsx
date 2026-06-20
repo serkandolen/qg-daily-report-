@@ -312,7 +312,7 @@ try { const _l = localStorage.getItem("siteapp_lang"); if(_l === "tr" || _l === 
 const STR_TR = {
   "Sign in":"Giriş", "Select your name and enter your password.":"Adınızı seçin ve şifrenizi girin.",
   "Name":"Ad", "Password":"Şifre", "Enter your password":"Şifrenizi girin", "Sign in →":"Giriş →",
-  "— Select —":"— Seçin —", "Daily manpower, targets & engineering — one place.":"Günlük işçilik, hedefler ve mühendislik — tek yerde.",
+  "— Select —":"— Seçin —",
   "Please select your name.":"Lütfen adınızı seçin.", "Incorrect password.":"Hatalı şifre.",
   "Loading site data…":"Saha verileri yükleniyor…",
   "Report":"Rapor", "Target":"Hedef", "Issues":"Konular", "Summary":"Özet", "Chat":"Sohbet",
@@ -1770,7 +1770,7 @@ function App(){
           <div className="lg-logo"><Icon name="flame" size={36} color="#fff" /></div>
           <div className="lg-title" style={{marginBottom:4}}>{project.name}</div>
           <div className="lg-kicker" style={{letterSpacing:".18em"}}>{project.kicker}</div>
-          <div className="lg-tag">{t("Daily manpower, targets & engineering — one place.")}</div>
+          <div className="lg-tag">{t("Daily Manpower, Targets, Site Follow Up & Engineering Issues")}</div>
         </div>
         <div className="lg-card">
           <h3>{t("Sign in")}</h3>
