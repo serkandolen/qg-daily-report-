@@ -39,7 +39,8 @@ import ReactDOM from "react-dom/client";
     + ".man-inp:focus{ border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-soft); }"
     + ".man-row.on .man-inp{ border-color:var(--accent); color:var(--accent); }"
     + ".man-grand{ display:flex; align-items:center; justify-content:space-between; padding:13px 16px; background:var(--accent); color:#fff; border-radius:10px; font-weight:700; }"
-    + ".man-grand span:last-child{ font-size:24px; font-weight:800; }";
+    + ".man-grand span:last-child{ font-size:24px; font-weight:800; }"
+    + ".punch-no{ font-size:13px; font-weight:800; color:var(--accent); background:var(--accent-soft); border-radius:6px; padding:2px 8px; letter-spacing:.02em; }";
   document.head.appendChild(extra);
 })();
 
@@ -53,6 +54,7 @@ const USERS_KEY    = "qg_users_v8";
 const CHAT_KEY     = "qg_chat_v8";
 const TARGETS_KEY  = "qg_targets_v8";
 const AREAS_KEY    = "qg_areas_v8";
+const PUNCH_KEY    = "qg_punch_v8";
 const SETTINGS_KEY = "qg_settings_v8";
 
 const ADMIN_USER = "Serkan";
@@ -77,6 +79,7 @@ const TAB_MAP = {
   [CHAT_KEY]:     "Chat",
   [TARGETS_KEY]:  "Targets",
   [AREAS_KEY]:    "Areas",
+  [PUNCH_KEY]:    "Punch",
   [SETTINGS_KEY]: "Settings",
 };
 
@@ -143,6 +146,16 @@ async function sdelete(key, id){
 async function supdateStatus(id, status, resolvedAt){
   try{ await gasCall({ action:"update_status", tab:"Engineering", id, status, resolvedAt: resolvedAt||"" }); }
   catch(e){ console.error("status error:", e); }
+}
+
+async function ppatchStatus(id, status, closedAt){
+  try{ await gasCall({ action:"update_status", tab:"Punch", id, status, resolvedAt: closedAt||"" }); }
+  catch(e){ console.error("punch status error:", e); }
+}
+
+async function gasUpdate(key, keyCol, keyVal, fields){
+  try{ await gasCall({ action:"update", tab: TAB_MAP[key], keyCol, keyVal, data: JSON.stringify(fields) }); }
+  catch(e){ console.error("update error:", e); }
 }
 
 /* ─────────── Image compression (unchanged) ─────────── */
@@ -297,6 +310,7 @@ const blankMan = (groups) => Object.fromEntries(allRoles(groups).map(r => [r.key
 const emptyForm   = (sup="", groups) => ({ date:todayStr(), supervisor:sup, area:"", subArea:"", man:blankMan(groups), jobDescription:"" });
 const emptyTarget = (sup="") => ({ date:todayStr(), supervisor:sup, area:"", weldTarget:"", fitUpTarget:"", tpCompletion:"" });
 const emptyEng    = () => ({ date:todayStr(), area:"", subArea:"", description:"", photos:[] });
+const emptyPunch  = (raisedBy="") => ({ date:todayStr(), punchType:"MPL", punchNo:"", area:"", subArea:"", remarks:"", raisedBy });
 
 /* ─────────── CSV ─────────── */
 function downloadCSV(rows, head, mapRow, name){
@@ -350,6 +364,18 @@ const STR_TR = {
   "Add or remove one role at a time. Pick a group, type the role.":"Tek tek rol ekle/sil. Grup seç, rol yaz.",
   "No internet — not saved":"İnternet yok — kaydedilemedi",
   "No internet — changes won\u2019t be saved":"İnternet yok — değişiklikler kaydedilmez",
+  "Punch":"Punch", "Punch Closure":"Punch Takibi", "Raise & track punch items (MPL / CPL).":"Punch kaydet & takip et (MPL / CPL).",
+  "Raise a punch":"Punch kaydet", "Punch Number":"Punch No", "Remarks":"Açıklama",
+  "Description / note about this punch…":"Bu punch ile ilgili açıklama / not…",
+  "Add punch":"Punch ekle", "punch saved":"punch kaydedildi", "All punches":"Tüm punchlar",
+  "No punches":"Punch yok", "Closed":"Kapalı", "Mark closed":"Kapalı işaretle",
+  "Raised by":"Kaydeden", "Enter date and punch number":"Tarih ve punch no girin",
+  "Scan to open the app":"Uygulamayı açmak için tarat",
+  "Punch list status & closure tracking.":"Punch listesi durumu & kapanış takibi.",
+  "Category":"Kategori", "Subsystem":"Subsystem", "Discipline":"Disiplin", "Raised":"Açan",
+  "Update":"Güncelle", "Field remarks…":"Saha açıklaması…",
+  "No punch list yet. Admin pastes it into the Punch sheet.":"Henüz punch listesi yok. Admin Punch sayfasına yapıştırır.",
+  "Search code, description, subsystem…":"Kod, açıklama, subsystem ara…",
   "Team chat":"Takım sohbeti", "members":"üye",
   "No messages yet. Say hello! 👋":"Henüz mesaj yok. Merhaba deyin! 👋", "Loading messages…":"Mesajlar yükleniyor…",
   "Type a message…":"Mesaj yazın…",
@@ -968,6 +994,177 @@ function EngScreen({ session, engIssues, areas, subAreas, onAddSubArea, onSubmit
 
 
 
+/* ════════════════════ PUNCH CLOSURE ════════════════════ */
+/* Master list is pasted into the "Punch" sheet by admin (columns:
+   Code, AREA, SUBSYSTEM, SS_DESCRIPTION, ELEMENT, DESCRIPTION, CATEGORY,
+   DISCIPLINE, RAISED). The app adds two editable columns: Remarks, Status.
+   Field supervisors fill Remarks + set Open/Closed; guests view only. */
+
+const PF = (r, keys) => { for(const k of keys){ if(r[k] !== undefined && r[k] !== null && r[k] !== "") return String(r[k]); } return ""; };
+function normPunch(r){
+  return {
+    code:       PF(r, ["Code","code","CODE"]),
+    area:       PF(r, ["AREA","area","Area"]),
+    subsystem:  PF(r, ["SUBSYSTEM","subsystem","Subsystem"]),
+    ssDesc:     PF(r, ["SS_DESCRIPTION","ssDescription","SS Description","ss_description"]),
+    element:    PF(r, ["ELEMENT","element","Element"]),
+    description:PF(r, ["DESCRIPTION","description","Description"]),
+    category:   PF(r, ["CATEGORY","category","Category"]) || "—",
+    discipline: PF(r, ["DISCIPLINE","discipline","Discipline"]),
+    raised:     PF(r, ["RAISED","raised","Raised"]),
+    remarks:    PF(r, ["Remarks","remarks","REMARKS"]),
+    closedAt:   PF(r, ["ClosedAt","closedAt","Closed At","CLOSEDAT"]),
+    closedBy:   PF(r, ["ClosedBy","closedBy","Closed By","CLOSEDBY"]),
+    status:    (PF(r, ["Status","status","STATUS"]) || "Open").toLowerCase().indexOf("clos") === 0 ? "Closed" : "Open",
+  };
+}
+
+function PunchRow({ p, canEdit, onUpdate }){
+  const [open, setOpen] = useState(false);
+  const [remarks, setRemarks] = useState(p.remarks);
+  const [dirty, setDirty] = useState(false);
+  const closed = p.status === "Closed";
+  return (
+    <div className={"eng " + (closed ? "resolved" : "open")} style={{ padding:"12px 14px" }}>
+      <div className="eng-meta">
+        <span className="punch-no tnum">{p.code}</span>
+        {p.area && <span className="chip area">{p.area}</span>}
+        {p.category && <span className="chip" style={{ background:"var(--info-soft)", color:"var(--info)", borderColor:"transparent" }}>Cat {p.category}</span>}
+        <span className={"pill " + (closed ? "resolved" : "open")}>{closed ? "✓ "+t("Closed") : "● "+t("Open")}</span>
+      </div>
+      {p.ssDesc && <div style={{ fontSize:13.5, fontWeight:600, marginTop:4 }}>{p.ssDesc}</div>}
+      {p.subsystem && <div style={{ fontSize:11, color:"var(--text-3)", marginTop:2 }}>{p.subsystem}{p.element ? " · "+p.element : ""}</div>}
+      {p.description && <div className="eng-desc" style={{ marginTop:7 }}>{p.description}</div>}
+      {closed && p.closedAt && <div className="resolved-stamp" style={{ marginTop:8 }}><Icon name="check" size={14}/> {t("Closed")} · {p.closedAt}{p.closedBy ? " · " + p.closedBy : ""}</div>}
+      <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginTop:7, fontSize:11, color:"var(--text-3)" }}>
+        {p.discipline && <span>{t("Discipline")}: <strong style={{color:"var(--text-2)"}}>{p.discipline}</strong></span>}
+        {p.raised && <span>{t("Raised")}: <strong style={{color:"var(--text-2)"}}>{p.raised}</strong></span>}
+      </div>
+
+      {canEdit ? (
+        <div style={{ marginTop:10, paddingTop:10, borderTop:"1px solid var(--border)" }}>
+          {!open && (
+            <button className="btn btn-ghost btn-sm" onClick={()=>setOpen(true)}><Icon name="settings" size={13}/> {t("Update")}</button>
+          )}
+          {open && <>
+            <label className="label">{t("Remarks")}</label>
+            <textarea className="textarea" rows={2} value={remarks} onChange={e=>{ setRemarks(e.target.value); setDirty(true); }} placeholder={t("Field remarks…")} />
+            <div style={{ display:"flex", gap:8, margintop:8, marginTop:8 }}>
+              <select className="select" style={{ flex:1 }} value={p.status} onChange={e=>onUpdate(p.code, { Remarks:remarks, Status:e.target.value })}>
+                <option value="Open">{t("Open")}</option>
+                <option value="Closed">{t("Closed")}</option>
+              </select>
+              <button className="btn btn-success" style={{ width:"auto", whiteSpace:"nowrap" }} disabled={!dirty}
+                onClick={()=>{ onUpdate(p.code, { Remarks:remarks, Status:p.status }); setDirty(false); setOpen(false); }}>
+                <Icon name="check" size={15}/> {t("Save")}
+              </button>
+            </div>
+          </>}
+          {!open && p.remarks && <div style={{ fontSize:12.5, color:"var(--text-2)", marginTop:7, fontStyle:"italic" }}>“{p.remarks}”</div>}
+        </div>
+      ) : (
+        p.remarks && <div style={{ fontSize:12.5, color:"var(--text-2)", marginTop:9, paddingTop:9, borderTop:"1px solid var(--border)", fontStyle:"italic" }}>“{p.remarks}”</div>
+      )}
+    </div>
+  );
+}
+
+function PunchScreen({ session, punches, onUpdate }){
+  const [filter, setFilter] = useState("all");
+  const [cat, setCat] = useState("all");
+  const [q, setQ] = useState("");
+  const [groupBy, setGroupBy] = useState("category");
+  const canEdit = !session.isGuest;
+
+  const items = punches.map(normPunch).filter(p => p.code);
+  const open = items.filter(p => p.status === "Open").length;
+  const closed = items.filter(p => p.status === "Closed").length;
+
+  const cats = [...new Set(items.map(p => p.category))].sort();
+  const groupKey = groupBy === "category" ? "category" : "subsystem";
+  const groups = {};
+  items.forEach(p => {
+    const k = p[groupKey] || "—";
+    if(!groups[k]) groups[k] = { open:0, closed:0, total:0 };
+    groups[k].total++; groups[k][p.status === "Closed" ? "closed" : "open"]++;
+  });
+  const groupRows = Object.entries(groups).sort((a,b)=>b[1].total-a[1].total);
+
+  const ql = q.trim().toLowerCase();
+  const list = items.filter(p =>
+    (filter === "all" || p.status.toLowerCase() === filter) &&
+    (cat === "all" || p.category === cat) &&
+    (!ql || (p.code+" "+p.ssDesc+" "+p.description+" "+p.subsystem+" "+p.area).toLowerCase().includes(ql))
+  );
+
+  return (
+    <div>
+      <h1 className="page-title">{t("Punch Closure")}</h1>
+      <p className="page-sub">{t("Punch list status & closure tracking.")}</p>
+
+      <div className="stat-row" style={{ gridTemplateColumns:"repeat(3,1fr)", marginBottom:14 }}>
+        <Stat label={t("Open")} value={open} tone="danger" />
+        <Stat label={t("Closed")} value={closed} tone="primary" />
+        <Stat label={t("Total")} value={items.length} tone="accent" />
+      </div>
+
+      {items.length > 0 && (
+        <div className="card pad" style={{ marginBottom:14 }}>
+          <div className="section-head">
+            <span className="bar"/><span className="st">{t("Summary")}</span>
+            <div className="segmented right">
+              <button className={groupBy==="category"?"on":""} onClick={()=>setGroupBy("category")}>{t("Category")}</button>
+              <button className={groupBy==="subsystem"?"on":""} onClick={()=>setGroupBy("subsystem")}>{t("Subsystem")}</button>
+            </div>
+          </div>
+          <div className="tbl-wrap" style={{ maxHeight:230, overflowY:"auto" }}>
+            <table className="tbl">
+              <thead><tr><th>{groupBy==="category"?t("Category"):t("Subsystem")}</th><th className="num">{t("Open")}</th><th className="num">{t("Closed")}</th><th className="num">{t("Total")}</th></tr></thead>
+              <tbody>
+                {groupRows.map(([k,v]) => (
+                  <tr key={k}>
+                    <td style={{ fontWeight:600, fontSize:12, whiteSpace:"normal" }}>{k}</td>
+                    <td className="num" style={{ color:"var(--danger)", fontWeight:700 }}>{v.open}</td>
+                    <td className="num" style={{ color:"var(--success)", fontWeight:700 }}>{v.closed}</td>
+                    <td className="num" style={{ fontWeight:800 }}>{v.total}</td>
+                  </tr>
+                ))}
+                <tr className="tot-row">
+                  <td style={{ fontSize:10, textTransform:"uppercase", letterSpacing:".06em", color:"var(--text-2)" }}>{t("Total")}</td>
+                  <td className="num" style={{ color:"var(--danger)" }}>{open}</td>
+                  <td className="num" style={{ color:"var(--success)" }}>{closed}</td>
+                  <td className="num" style={{ color:"var(--accent)" }}>{items.length}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {items.length === 0 ? (
+        <div className="empty"><div className="ee">📋</div>{t("No punch list yet. Admin pastes it into the Punch sheet.")}</div>
+      ) : (
+        <>
+          <input className="input" style={{ marginBottom:10 }} value={q} onChange={e=>setQ(e.target.value)} placeholder={t("Search code, description, subsystem…")} />
+          <div style={{ display:"flex", gap:8, marginBottom:14, flexWrap:"wrap" }}>
+            <div className="segmented">
+              {["all","open","closed"].map(f => <button key={f} className={filter===f?"on":""} onClick={()=>setFilter(f)}>{t(f.charAt(0).toUpperCase()+f.slice(1))}</button>)}
+            </div>
+            {cats.length > 1 && (
+              <select className="select" style={{ width:"auto", minHeight:38, padding:"6px 30px 6px 12px", fontSize:13 }} value={cat} onChange={e=>setCat(e.target.value)}>
+                <option value="all">{t("All")} ({t("Category")})</option>
+                {cats.map(c => <option key={c} value={c}>Cat {c}</option>)}
+              </select>
+            )}
+          </div>
+          <div style={{ fontSize:11, color:"var(--text-3)", marginBottom:10 }}>{list.length} / {items.length}</div>
+          {list.map(p => <PunchRow key={p.code} p={p} canEdit={canEdit} onUpdate={onUpdate} />)}
+        </>
+      )}
+    </div>
+  );
+}
+
 /* ════════════════════ SUMMARY ════════════════════ */
 function SummaryScreen({ session, reports, targets, engIssues, roleGroups, onToggle }){
   const [sumDate, setSumDate] = useState(todayStr());
@@ -1556,7 +1753,7 @@ const readCache = (k) => { try{ return JSON.parse(localStorage.getItem(k)); }cat
 const writeCache = (k,v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} };
 
 function App(){
-  const APP_VERSION = "v2026.06.20 · build 12";
+  const APP_VERSION = "v2026.06.20 · build 14";
   const [lang, setLangState] = useState(LANG);
   LANG = lang;
   const toggleLang = () => { const nx = lang === "tr" ? "en" : "tr"; LANG = nx; setLangState(nx); try{ localStorage.setItem("siteapp_lang", nx); }catch(e){} };
@@ -1578,6 +1775,7 @@ function App(){
 
   const [reports, setReports]     = useState([]);
   const [engIssues, setEngIssues] = useState([]);
+  const [punches, setPunches]     = useState([]);
   const [targets, setTargets]     = useState([]);
 
   const [tab, setTab]     = useState("report");
@@ -1599,6 +1797,7 @@ function App(){
       const usr = u || DEFAULT_PASSWORDS;
       if(!u) await sset(USERS_KEY, DEFAULT_PASSWORDS);
       setReports(rep); setEngIssues(eng); setTargets(tar); setUsers(usr);
+      sget(PUNCH_KEY).then(pl => setPunches(pl || []));
       setSupervisors(Object.keys(usr).filter(n => n !== GUEST_USER));
 
       /* Areas + sub-areas: sheet/records, then merge local cache */
@@ -1650,6 +1849,13 @@ function App(){
     const resolvedAt = status === "resolved" ? fmtForSheet() : "";
     setEngIssues(p => p.map(e => e.id === id ? { ...e, status, resolvedAt } : e));
     await supdateStatus(id, status, resolvedAt);
+  };
+  const updatePunch = async (code, fields) => {
+    const out = { ...fields };
+    if(fields.Status === "Closed"){ out.ClosedAt = fmtForSheet(); out.ClosedBy = session.name; }
+    if(fields.Status === "Open"){ out.ClosedAt = ""; out.ClosedBy = ""; }
+    setPunches(p => p.map(x => String(PF(x, ["Code","code","CODE"])) === String(code) ? { ...x, ...out } : x));
+    await gasUpdate(PUNCH_KEY, "Code", code, out);
   };
 
   /* ── Team management → Users sheet ── */
@@ -1758,11 +1964,12 @@ function App(){
 
   /* ── Nav items by role ── */
   const navItems = session.isGuest
-    ? [{ id:"summary", label:t("Summary"), icon:"summary" }]
+    ? [{ id:"summary", label:t("Summary"), icon:"summary" }, { id:"punch", label:t("Punch"), icon:"check" }]
     : [
         { id:"report",      label:t("Report"),  icon:"report" },
         { id:"target",      label:t("Target"),  icon:"target" },
         { id:"engineering", label:t("Issues"),  icon:"eng", badge:openCount },
+        { id:"punch",       label:t("Punch"),   icon:"check" },
         { id:"summary",     label:t("Summary"), icon:"summary" },
         { id:"chat",        label:t("Chat"),    icon:"chat" },
       ];
@@ -1792,6 +1999,9 @@ function App(){
           <EngScreen session={session} engIssues={engIssues}
             areas={areas} subAreas={subAreas} onAddSubArea={addSubArea}
             onSubmit={submitEng} onToggle={toggleEng} showFlash={showFlash} />
+        )}
+        {tab === "punch" && (
+          <PunchScreen session={session} punches={punches} onUpdate={updatePunch} />
         )}
         {tab === "summary" && (
           <SummaryScreen session={session} reports={reports} targets={targets}
@@ -1834,6 +2044,11 @@ function App(){
             <div style={{ fontSize:26, fontWeight:800, letterSpacing:"-.02em" }}>SECOSYS</div>
             <div style={{ fontSize:12.5, color:"var(--accent)", fontWeight:700, letterSpacing:".16em", textTransform:"uppercase", marginTop:5 }}>Create an Ecosystem</div>
             <div style={{ fontSize:14, color:"var(--text-2)", marginTop:16 }}>Created by <strong style={{ color:"var(--text)" }}>Serkan Dölen</strong></div>
+            <div style={{ marginTop:18, padding:"16px 0 4px", borderTop:"1px solid var(--border)" }}>
+              <img alt="QR" width="150" height="150" style={{ borderRadius:12, border:"1px solid var(--border)" }}
+                src={"https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=8&data=" + encodeURIComponent(window.location.origin + window.location.pathname)} />
+              <div style={{ fontSize:12, color:"var(--text-3)", marginTop:10 }}>{t("Scan to open the app")}</div>
+            </div>
             <div style={{ fontSize:11, color:"var(--text-3)", marginTop:8 }}>{APP_VERSION}</div>
           </div>
         </Sheet>
