@@ -65,7 +65,7 @@ const DEFAULT_PASSWORDS = {
   Guest:"guest01"
 };
 const DEFAULT_AREAS = [];   // no sample areas — each project loads its own (sheet / import)
-const DEFAULT_PROJECT = { name:"SECOSYS", kicker:"SECO System", company:"SECO System" };
+const DEFAULT_PROJECT = { name:"TWJV QATAR EPC-04", kicker:"SECOSYS", company:"SECOSYS" };
 
 /* ⚠️ Same web-app URL as your current app */
 const GAS_URL = "https://script.google.com/macros/s/AKfycbw-dXlk7atpEpLWHA7YsEOu1GSdD1sMuaaA-H8kWnWYWwS_q7obt309vnUcjIAjJVT9/exec";
@@ -471,8 +471,8 @@ function TopBar({ session, project, openCount, onProfile, onRecords, onBell, onA
     <div className="topbar">
       <button className="brand-mark" onClick={onAbout} title="SECOSYS" style={{ border:"none", cursor:"pointer", padding:0 }}><Icon name="flame" size={20} /></button>
       <div className="t-titles">
-        <span className="t-title">{project.name}</span>
-        <span className="t-kicker" style={{marginTop:1}}>{project.kicker}</span>
+        <span className="t-title" style={{fontSize:21, fontWeight:900, letterSpacing:"-.02em"}}>{project.name}</span>
+        <span className="t-kicker" style={{marginTop:1, fontSize:9}}>{project.kicker}</span>
       </div>
       <div className="t-actions">
         <button className="iconbtn lang-toggle" onClick={onLang} title="Language">{lang === "tr" ? "TR" : "EN"}</button>
@@ -1556,7 +1556,7 @@ const readCache = (k) => { try{ return JSON.parse(localStorage.getItem(k)); }cat
 const writeCache = (k,v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} };
 
 function App(){
-  const APP_VERSION = "v2026.06.20 · build 9";
+  const APP_VERSION = "v2026.06.20 · build 11";
   const [lang, setLangState] = useState(LANG);
   LANG = lang;
   const toggleLang = () => { const nx = lang === "tr" ? "en" : "tr"; LANG = nx; setLangState(nx); try{ localStorage.setItem("siteapp_lang", nx); }catch(e){} };
@@ -1729,9 +1729,9 @@ function App(){
         <button className="lang-corner" onClick={toggleLang}>{lang === "tr" ? "TR" : "EN"}</button>
         <div className="lg-top">
           <div className="lg-logo"><Icon name="flame" size={36} color="#fff" /></div>
-          <div className="lg-title" style={{marginBottom:4}}>{project.name}</div>
-          <div className="lg-kicker" style={{letterSpacing:".18em"}}>{project.kicker}</div>
-          <div className="lg-tag">{t("Daily Manpower, Targets, Site Follow Up & Engineering Issues")}</div>
+          <div className="lg-title" style={{marginBottom:4, fontSize:40, fontWeight:900, letterSpacing:"-.03em"}}>{project.name}</div>
+          <div className="lg-kicker" style={{letterSpacing:".2em", fontSize:10.5}}>{project.kicker}</div>
+          <div className="lg-tag" style={{fontSize:11.5}}>{t("Daily Manpower, Targets, Site Follow Up & Engineering Issues")}</div>
         </div>
         <div className="lg-card">
           <h3>{t("Sign in")}</h3>
