@@ -68,7 +68,7 @@ const DEFAULT_AREAS = [];   // no sample areas — each project loads its own (s
 const DEFAULT_PROJECT = { name:"SECOSYS", kicker:"SECO System", company:"SECO System" };
 
 /* ⚠️ Same web-app URL as your current app */
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxcpD6vPVmXVAfq5tHVz4jbRfpZT0KLWCjPduci2xdGcvGZ68NsZrGFfSnowPB9jSh1pQ/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbw-dXlk7atpEpLWHA7YsEOu1GSdD1sMuaaA-H8kWnWYWwS_q7obt309vnUcjIAjJVT9/exec";
 
 const TAB_MAP = {
   [STORAGE_KEY]:  "Reports",
