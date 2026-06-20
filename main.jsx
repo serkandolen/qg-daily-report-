@@ -342,6 +342,7 @@ const STR_TR = {
   "Records":"Kayıtlar", "Admin · all submitted data & exports.":"Yönetici · tüm gönderilen veriler & dışa aktarma.",
   "Filters":"Filtreler", "Clear filters":"Filtreleri temizle", "All":"Tümü",
   "⚙ Manage":"⚙ Yönetim", "Targets":"Hedefler",
+  "Administration":"Yönetim", "Manage team, areas & roles":"Takım, alanlar & roller yönetimi",
   "Team chat":"Takım sohbeti", "members":"üye",
   "No messages yet. Say hello! 👋":"Henüz mesaj yok. Merhaba deyin! 👋", "Loading messages…":"Mesajlar yükleniyor…",
   "Type a message…":"Mesaj yazın…",
@@ -358,6 +359,8 @@ const TPL = {
   openPending:     { en:"{n} open issue(s) pending resolution", tr:"{n} açık konu çözüm bekliyor" },
 };
 function tn(key, n){ const o = TPL[key]; return (LANG === "tr" ? o.tr : o.en).split("{n}").join(n); }
+const natCmp = (a, b) => String(a).localeCompare(String(b), undefined, { numeric:true, sensitivity:"base" });
+const sortSubs = (arr) => [...(arr || [])].sort(natCmp);
 
 
 /* ═══════════════════ UI COMPONENTS ═══════════════════ */
@@ -522,8 +525,8 @@ function Combobox({ value, onChange, options=[], placeholder, disabled }){
   }, []);
   const q = (value || "").trim().toLowerCase();
   const exact = options.some(o => o.toLowerCase() === q && q);
-  const matches = q ? options.filter(o => o.toLowerCase().includes(q) && o.toLowerCase() !== q) : [];
-  const CAP = 60;
+  const matches = q ? options.filter(o => o.toLowerCase().includes(q) && o.toLowerCase() !== q) : options;
+  const CAP = 200;
   const shown = matches.slice(0, CAP);
 
   // bold the matched fragment
@@ -542,8 +545,8 @@ function Combobox({ value, onChange, options=[], placeholder, disabled }){
         placeholder={placeholder} autoComplete="off" />
       {showList && (
         <div className="cmb-list">
-          {!q && (
-            <div className="cmb-hint">{options.length} sub-area{options.length===1?"":"s"} · type to filter</div>
+          {!q && options.length > 0 && (
+            <div className="cmb-hint">{options.length} {t("Sub-Area")} · {LANG==="tr"?"seçin veya yazıp filtreleyin":"pick or type to filter"}</div>
           )}
           {q && shown.length === 0 && !exact && (
             <div className="cmb-hint">No match — keep typing to add a new one</div>
@@ -671,7 +674,7 @@ function ReportScreen({ session, reports, supervisors, areas, subAreas, roleGrou
         <div className="field">
           <label className="label">{t("Sub-Area")}</label>
           <Combobox value={form.subArea} onChange={v=>sf("subArea",v)}
-            options={subAreas[form.area]||[]} disabled={!form.area}
+            options={sortSubs(subAreas[form.area])} disabled={!form.area}
             placeholder={form.area ? t("Type or pick a sub-area…") : t("Select an area first")} />
         </div>
 
@@ -907,7 +910,7 @@ function EngScreen({ session, engIssues, areas, subAreas, onAddSubArea, onSubmit
           <div className="field">
             <label className="label">{t("Sub-Area")}</label>
             <Combobox value={form.subArea} onChange={v=>se("subArea",v)}
-              options={subAreas[form.area]||[]} disabled={!form.area}
+              options={sortSubs(subAreas[form.area])} disabled={!form.area}
               placeholder={form.area ? t("Type or pick…") : t("Select area first")} />
           </div>
         </div>
@@ -1075,7 +1078,7 @@ function SummaryScreen({ session, reports, targets, engIssues, roleGroups, onTog
 }
 
 /* ════════════════════ RECORDS (admin) ════════════════════ */
-function RecordsScreen({ session, reports, targets, engIssues, supervisors, areas, subAreas, users, project, roleGroups,
+function RecordsScreen({ session, reports, targets, engIssues, supervisors, areas, subAreas, users, project, roleGroups, adminOnly,
   onToggle, onDeleteReport, onAddSup, onRemoveSup, onRenameSup, onSetPw,
   onAddArea, onRemoveArea, onRenameArea, onAddSubArea, onRemoveSubArea, onImportAreaMap, onUpdateProject,
   onAddRole, onRemoveRole, onRenameRole, showFlash }){
@@ -1084,7 +1087,7 @@ function RecordsScreen({ session, reports, targets, engIssues, supervisors, area
   const [fDate, setFDate] = useState("");
   const [engFilter, setEngFilter] = useState("all");
   const [expanded, setExpanded] = useState(null);
-  const [sub, setSub] = useState("manpower");
+  const [sub, setSub] = useState(adminOnly ? "manage" : "manpower");
   /* management local state */
   const [newSup, setNewSup] = useState("");
   const [newSupPw, setNewSupPw] = useState("");
@@ -1172,9 +1175,10 @@ function RecordsScreen({ session, reports, targets, engIssues, supervisors, area
 
   return (
     <div>
-      <h1 className="page-title">{t("Records")}</h1>
-      <p className="page-sub">{t("Admin · all submitted data & exports.")}</p>
+      <h1 className="page-title">{adminOnly ? t("Administration") : t("Records")}</h1>
+      <p className="page-sub">{adminOnly ? t("Manage team, areas & roles") : t("Admin · all submitted data & exports.")}</p>
 
+      {!adminOnly && <>
       <div className="card pad">
         <div className="section-head"><span className="bar"/><span className="st"><Icon name="filter" size={13} style={{verticalAlign:"-2px"}}/> Filters</span></div>
         <div className="grid-2">
@@ -1209,6 +1213,7 @@ function RecordsScreen({ session, reports, targets, engIssues, supervisors, area
           </button>
         ))}
       </div>
+      </>}
 
       {sub==="manpower" && (
         <div className="card pad">
@@ -1290,7 +1295,7 @@ function RecordsScreen({ session, reports, targets, engIssues, supervisors, area
         </div>
       )}
 
-      {sub==="manage" && (
+      {(adminOnly || sub==="manage") && (
         <div>
           {/* ── TEAM ── */}
           <div className="card pad">
@@ -1358,7 +1363,7 @@ function RecordsScreen({ session, reports, targets, engIssues, supervisors, area
             {areas.map(a => {
               const renaming = areaEdit[a] !== undefined;
               const used = reports.some(r=>r.area===a) || engIssues.some(e=>e.area===a) || targets.some(t=>t.area===a);
-              const subs = subAreas[a] || [];
+              const subs = sortSubs(subAreas[a]);
               return (
                 <div key={a} className="sa-group">
                   <div style={{ display:"flex", alignItems:"center", gap:10 }}>
@@ -1603,7 +1608,7 @@ const readCache = (k) => { try{ return JSON.parse(localStorage.getItem(k)); }cat
 const writeCache = (k,v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} };
 
 function App(){
-  const APP_VERSION = "v2026.06.20 · build 2";
+  const APP_VERSION = "v2026.06.20 · build 5";
   const [lang, setLangState] = useState(LANG);
   LANG = lang;
   const toggleLang = () => { const nx = lang === "tr" ? "en" : "tr"; LANG = nx; setLangState(nx); try{ localStorage.setItem("siteapp_lang", nx); }catch(e){} };
@@ -1806,6 +1811,7 @@ function App(){
         { id:"summary",     label:t("Summary"), icon:"summary" },
         { id:"chat",        label:t("Chat"),    icon:"chat" },
       ];
+  if(session.isAdmin) navItems.push({ id:"admin", label:t("Administration"), icon:"settings" });
 
   return (
     <div className="app">
@@ -1841,6 +1847,17 @@ function App(){
         {tab === "records" && session.isAdmin && (
           <RecordsScreen session={session} reports={reports} targets={targets} engIssues={engIssues}
             supervisors={supervisors} areas={areas} subAreas={subAreas} users={users} project={project} roleGroups={roleGroups}
+            onToggle={toggleEng} onDeleteReport={deleteReport}
+            onAddSup={addSup} onRemoveSup={removeSup} onRenameSup={renameSup} onSetPw={setPassword}
+            onAddArea={addArea} onRemoveArea={removeArea} onRenameArea={renameArea}
+            onAddSubArea={addSubArea} onRemoveSubArea={removeSubArea} onImportAreaMap={importAreaMap}
+            onUpdateProject={updateProject}
+            onAddRole={addRole} onRemoveRole={removeRole} onRenameRole={renameRole} showFlash={showFlash} />
+        )}
+        {tab === "admin" && session.isAdmin && (
+          <RecordsScreen session={session} reports={reports} targets={targets} engIssues={engIssues}
+            supervisors={supervisors} areas={areas} subAreas={subAreas} users={users} project={project} roleGroups={roleGroups}
+            adminOnly={true}
             onToggle={toggleEng} onDeleteReport={deleteReport}
             onAddSup={addSup} onRemoveSup={removeSup} onRenameSup={renameSup} onSetPw={setPassword}
             onAddArea={addArea} onRemoveArea={removeArea} onRenameArea={renameArea}
