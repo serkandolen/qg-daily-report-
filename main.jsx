@@ -395,6 +395,13 @@ const TPL = {
 function tn(key, n){ const o = TPL[key]; return (LANG === "tr" ? o.tr : o.en).split("{n}").join(n); }
 const natCmp = (a, b) => String(a).localeCompare(String(b), undefined, { numeric:true, sensitivity:"base" });
 const sortSubs = (arr) => [...(arr || [])].sort(natCmp);
+/* Normalize any date value (ISO string, Date, serial) to clean YYYY-MM-DD */
+function dOnly(v){
+  if(v === null || v === undefined || v === "") return "";
+  if(typeof v === "string") return v.length >= 10 && v[4] === "-" ? v.slice(0,10) : v;
+  try{ const d = new Date(v); if(!isNaN(d.getTime())) return d.toISOString().slice(0,10); }catch(e){}
+  return String(v);
+}
 
 
 /* ═══════════════════ UI COMPONENTS ═══════════════════ */
@@ -1526,7 +1533,7 @@ function RecordsScreen({ session, reports, targets, engIssues, supervisors, area
                     return (
                     <React.Fragment key={r.id}>
                       <tr onClick={()=>setExpanded(expanded===r.id?null:r.id)} style={{ cursor:"pointer" }}>
-                        <td style={{ color:"var(--text-2)", fontSize:12 }}>{r.date.slice(5)}</td>
+                        <td style={{ color:"var(--text-2)", fontSize:12 }}>{String(r.date||"").slice(5)}</td>
                         <td style={{ fontWeight:600 }}>{r.supervisor}</td>
                         <td><span className="chip area">{r.area}</span></td>
                         <td className="num">{m.direct}</td>
@@ -1577,7 +1584,7 @@ function RecordsScreen({ session, reports, targets, engIssues, supervisors, area
                 <thead><tr>{["Date","Sup.","Area","Weld","Fit","TP"].map(h=><th key={h} className={["Weld","Fit","TP"].includes(h)?"num":""}>{h}</th>)}</tr></thead>
                 <tbody>{fTargets.map(t=>(
                   <tr key={t.id}>
-                    <td style={{ color:"var(--text-2)", fontSize:12 }}>{t.date.slice(5)}</td>
+                    <td style={{ color:"var(--text-2)", fontSize:12 }}>{String(t.date||"").slice(5)}</td>
                     <td style={{ fontWeight:600 }}>{t.supervisor}</td>
                     <td><span className="chip area">{t.area}</span></td>
                     <td className="num" style={{ color:"var(--info)", fontWeight:700 }}>{t.weldTarget!=="-"?t.weldTarget+"″":"—"}</td>
@@ -1806,7 +1813,7 @@ const readCache = (k) => { try{ return JSON.parse(localStorage.getItem(k)); }cat
 const writeCache = (k,v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} };
 
 function App(){
-  const APP_VERSION = "v2026.06.20 · build 18";
+  const APP_VERSION = "v2026.06.20 · build 19";
   const [lang, setLangState] = useState(LANG);
   LANG = lang;
   const toggleLang = () => { const nx = lang === "tr" ? "en" : "tr"; LANG = nx; setLangState(nx); try{ localStorage.setItem("siteapp_lang", nx); }catch(e){} };
@@ -1846,7 +1853,9 @@ function App(){
       const [r, e, u, t] = await Promise.all([
         sget(STORAGE_KEY), sget(ENG_KEY), sget(USERS_KEY), sget(TARGETS_KEY),
       ]);
-      const rep = r || [], eng = e || [], tar = t || [];
+      const rep = (r || []).map(x => ({ ...x, date: dOnly(x.date) }));
+      const eng = (e || []).map(x => ({ ...x, date: dOnly(x.date) }));
+      const tar = (t || []).map(x => ({ ...x, date: dOnly(x.date) }));
       const usr = u || DEFAULT_PASSWORDS;
       if(!u) await sset(USERS_KEY, DEFAULT_PASSWORDS);
       setReports(rep); setEngIssues(eng); setTargets(tar); setUsers(usr);
