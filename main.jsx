@@ -376,7 +376,7 @@ const STR_TR = {
   "Update":"Güncelle", "Field remarks…":"Saha açıklaması…",
   "No punch list yet. Admin pastes it into the Punch sheet.":"Henüz punch listesi yok. Admin Punch sayfasına yapıştırır.",
   "Search code, description, subsystem…":"Kod, açıklama, subsystem ara…",
-  "Status":"Durum", "Add photo":"Fotoğraf ekle", "Change photo":"Fotoğrafı değiştir", "Save":"Kaydet", "Show more":"Daha fazla göster",
+  "Status":"Durum", "Add photo":"Fotoğraf ekle", "Change photo":"Fotoğrafı değiştir", "Save":"Kaydet", "Show more":"Daha fazla göster", "Cancel":"İptal",
   "Team chat":"Takım sohbeti", "members":"üye",
   "No messages yet. Say hello! 👋":"Henüz mesaj yok. Merhaba deyin! 👋", "Loading messages…":"Mesajlar yükleniyor…",
   "Type a message…":"Mesaj yazın…",
@@ -1104,7 +1104,10 @@ function PunchRow({ p, canEdit, onUpdate }){
                 <button onClick={()=>setPhoto("")} style={{ position:"absolute", top:-6, right:-6, width:20, height:20, borderRadius:"50%", background:"var(--danger)", border:"none", color:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}><Icon name="x" size={11}/></button>
               </div>}
             </div>
-            <button className="btn btn-success btn-block" style={{ marginTop:12 }} disabled={!dirty} onClick={save}><Icon name="check" size={15}/> {t("Save")}</button>
+            <div style={{ display:"flex", gap:8, marginTop:12 }}>
+              <button className="btn btn-ghost" style={{ flex:"0 0 38%" }} onClick={()=>{ setRemarks(p.remarks); setStatus(p.status); setPhoto(p.closePhoto||""); setOpen(false); }}><Icon name="x" size={15}/> {t("Cancel")}</button>
+              <button className="btn btn-success" style={{ flex:1 }} disabled={!dirty} onClick={save}><Icon name="check" size={15}/> {t("Save")}</button>
+            </div>
           </>}
           {!open && p.remarks && <div style={{ fontSize:12.5, color:"var(--text-2)", marginTop:7, fontStyle:"italic" }}>“{p.remarks}”</div>}
           {!open && p.closePhoto && <img src={p.closePhoto} onClick={()=>setLb(p.closePhoto)} style={{ width:54, height:54, objectFit:"cover", borderRadius:8, border:"1px solid var(--border)", marginTop:8, cursor:"zoom-in" }} alt="" />}
@@ -1131,14 +1134,17 @@ function PunchScreen({ session, punches, onUpdate }){
   const canEdit = !session.isGuest;
 
   const items = punches.map(normPunch).filter(p => p.code);
-  const open = items.filter(p => p.status === "Open").length;
-  const closed = items.filter(p => p.status === "Closed").length;
-
-  const cats = [...new Set(items.map(p => p.category))].sort();
   const punchAreas = [...new Set(items.map(p => p.area).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b), undefined, { numeric:true }));
+
+  /* Area filter scopes EVERYTHING (stats + summary + list) */
+  const scoped = items.filter(p => area === "all" || p.area === area);
+  const open = scoped.filter(p => p.status === "Open").length;
+  const closed = scoped.filter(p => p.status === "Closed").length;
+
+  const cats = [...new Set(scoped.map(p => p.category))].sort();
   const groupKey = groupBy === "category" ? "category" : "subsystem";
   const groups = {};
-  items.forEach(p => {
+  scoped.forEach(p => {
     const k = p[groupKey] || "—";
     if(!groups[k]) groups[k] = { open:0, closed:0, total:0 };
     groups[k].total++; groups[k][p.status === "Closed" ? "closed" : "open"]++;
@@ -1146,10 +1152,9 @@ function PunchScreen({ session, punches, onUpdate }){
   const groupRows = Object.entries(groups).sort((a,b)=>b[1].total-a[1].total);
 
   const ql = q.trim().toLowerCase();
-  const list = items.filter(p =>
+  const list = scoped.filter(p =>
     (filter === "all" || p.status.toLowerCase() === filter) &&
     (cat === "all" || p.category === cat) &&
-    (area === "all" || p.area === area) &&
     (!ql || (p.code+" "+p.ssDesc+" "+p.description+" "+p.subsystem+" "+p.area).toLowerCase().includes(ql))
   );
 
@@ -1158,16 +1163,23 @@ function PunchScreen({ session, punches, onUpdate }){
       <h1 className="page-title">{t("Punch Closure")}</h1>
       <p className="page-sub">{t("Punch list status & closure tracking.")}</p>
 
+      {punchAreas.length > 1 && (
+        <select className="select" style={{ marginBottom:14 }} value={area} onChange={e=>setArea(e.target.value)}>
+          <option value="all">{t("All")} — {t("Area")} ({items.length})</option>
+          {punchAreas.map(a => <option key={a} value={a}>{a}</option>)}
+        </select>
+      )}
+
       <div className="stat-row" style={{ gridTemplateColumns:"repeat(3,1fr)", marginBottom:14 }}>
         <Stat label={t("Open")} value={open} tone="danger" />
         <Stat label={t("Closed")} value={closed} tone="primary" />
-        <Stat label={t("Total")} value={items.length} tone="accent" />
+        <Stat label={t("Total")} value={scoped.length} tone="accent" />
       </div>
 
-      {items.length > 0 && (
+      {scoped.length > 0 && (
         <div className="card pad" style={{ marginBottom:14 }}>
           <div className="section-head">
-            <span className="bar"/><span className="st">{t("Summary")}</span>
+            <span className="bar"/><span className="st">{t("Summary")}{area!=="all" ? " · "+area : ""}</span>
             <div className="segmented right">
               <button className={groupBy==="category"?"on":""} onClick={()=>setGroupBy("category")}>{t("Category")}</button>
               <button className={groupBy==="subsystem"?"on":""} onClick={()=>setGroupBy("subsystem")}>{t("Subsystem")}</button>
@@ -1189,7 +1201,7 @@ function PunchScreen({ session, punches, onUpdate }){
                   <td style={{ fontSize:10, textTransform:"uppercase", letterSpacing:".06em", color:"var(--text-2)" }}>{t("Total")}</td>
                   <td className="num" style={{ color:"var(--danger)" }}>{open}</td>
                   <td className="num" style={{ color:"var(--success)" }}>{closed}</td>
-                  <td className="num" style={{ color:"var(--accent)" }}>{items.length}</td>
+                  <td className="num" style={{ color:"var(--accent)" }}>{scoped.length}</td>
                 </tr>
               </tbody>
             </table>
@@ -1206,12 +1218,6 @@ function PunchScreen({ session, punches, onUpdate }){
             <div className="segmented">
               {["all","open","closed"].map(f => <button key={f} className={filter===f?"on":""} onClick={()=>setFilter(f)}>{t(f.charAt(0).toUpperCase()+f.slice(1))}</button>)}
             </div>
-            {punchAreas.length > 1 && (
-              <select className="select" style={{ width:"auto", minHeight:38, padding:"6px 30px 6px 12px", fontSize:13 }} value={area} onChange={e=>setArea(e.target.value)}>
-                <option value="all">{t("All")} ({t("Area")})</option>
-                {punchAreas.map(a => <option key={a} value={a}>{a}</option>)}
-              </select>
-            )}
             {cats.length > 1 && (
               <select className="select" style={{ width:"auto", minHeight:38, padding:"6px 30px 6px 12px", fontSize:13 }} value={cat} onChange={e=>setCat(e.target.value)}>
                 <option value="all">{t("All")} ({t("Category")})</option>
@@ -1840,7 +1846,7 @@ class ScreenGuard extends React.Component {
 }
 
 function App(){
-  const APP_VERSION = "v2026.06.20 · build 22";
+  const APP_VERSION = "v2026.06.21 · build 24";
   const [lang, setLangState] = useState(LANG);
   LANG = lang;
   const toggleLang = () => { const nx = lang === "tr" ? "en" : "tr"; LANG = nx; setLangState(nx); try{ localStorage.setItem("siteapp_lang", nx); }catch(e){} };
