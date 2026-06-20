@@ -910,7 +910,7 @@ function EngScreen({ session, engIssues, areas, subAreas, onAddSubArea, onSubmit
   };
 
   const openCount = engIssues.filter(e=>(e.status||"open")==="open").length;
-  const list = engIssues.filter(e=>filter==="all"||(e.status||"open")===filter).slice().sort((a,b)=>b.date.localeCompare(a.date));
+  const list = engIssues.filter(e=>filter==="all"||(e.status||"open")===filter).slice().sort((a,b)=>String(b.date||"").localeCompare(String(a.date||"")));
 
   return (
     <div>
@@ -1397,9 +1397,9 @@ function RecordsScreen({ session, reports, targets, engIssues, supervisors, area
   const [newRole, setNewRole] = useState({});
   const [roleEdit, setRoleEdit] = useState({});
 
-  const fReports = reports.filter(r=>(fSup==="All"||r.supervisor===fSup)&&(fArea==="All"||r.area===fArea)&&(!fDate||r.date===fDate)).slice().sort((a,b)=>b.date.localeCompare(a.date));
-  const fEng = engIssues.filter(r=>(fArea==="All"||r.area===fArea)&&(!fDate||r.date===fDate)&&(engFilter==="all"||(r.status||"open")===engFilter)).slice().sort((a,b)=>b.date.localeCompare(a.date));
-  const fTargets = targets.filter(t=>(fSup==="All"||t.supervisor===fSup)&&(!fDate||t.date===fDate)).slice().sort((a,b)=>b.date.localeCompare(a.date));
+  const fReports = reports.filter(r=>(fSup==="All"||r.supervisor===fSup)&&(fArea==="All"||r.area===fArea)&&(!fDate||r.date===fDate)).slice().sort((a,b)=>String(b.date||"").localeCompare(String(a.date||"")));
+  const fEng = engIssues.filter(r=>(fArea==="All"||r.area===fArea)&&(!fDate||r.date===fDate)&&(engFilter==="all"||(r.status||"open")===engFilter)).slice().sort((a,b)=>String(b.date||"").localeCompare(String(a.date||"")));
+  const fTargets = targets.filter(t=>(fSup==="All"||t.supervisor===fSup)&&(!fDate||t.date===fDate)).slice().sort((a,b)=>String(b.date||"").localeCompare(String(a.date||"")));
   const sum = k => fReports.reduce((s,r)=>s+r[k],0);
   const sumMan = k => fReports.reduce((s,r)=>s+manStats(r, roleGroups)[k],0);
 
@@ -1806,7 +1806,7 @@ const readCache = (k) => { try{ return JSON.parse(localStorage.getItem(k)); }cat
 const writeCache = (k,v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} };
 
 function App(){
-  const APP_VERSION = "v2026.06.20 · build 17";
+  const APP_VERSION = "v2026.06.20 · build 18";
   const [lang, setLangState] = useState(LANG);
   LANG = lang;
   const toggleLang = () => { const nx = lang === "tr" ? "en" : "tr"; LANG = nx; setLangState(nx); try{ localStorage.setItem("siteapp_lang", nx); }catch(e){} };
