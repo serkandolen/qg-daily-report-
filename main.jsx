@@ -23,7 +23,12 @@ import ReactDOM from "react-dom/client";
   extra.textContent = ".offline-bar{ position:fixed; top:0; left:0; right:0; z-index:999; background:#C0392B; color:#fff; text-align:center; font-size:12.5px; font-weight:700; padding:8px 12px; letter-spacing:.01em; } .lang-toggle{ font-size:12px; font-weight:800; letter-spacing:.04em; color:var(--primary); } .lang-corner{ position:absolute; top:14px; right:16px; z-index:3; background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.3); color:#fff; font-size:12px; font-weight:800; border-radius:9px; padding:7px 12px; cursor:pointer; } .cmb-hint{ padding:9px 12px; font-size:12px; color:var(--text-3); font-weight:500; }"
     + ".topbar .brand-mark{ background:linear-gradient(150deg,#FF8A33,#E0322E)!important; box-shadow:0 2px 10px rgba(224,50,46,.35), inset 0 1px 0 rgba(255,255,255,.25)!important; }"
     + ".login .lg-logo{ background:linear-gradient(150deg,#FF8A33,#E0322E)!important; border-color:rgba(255,150,90,.5)!important; box-shadow:0 10px 30px rgba(224,50,46,.45)!important; }"
-    + ".login{ background:linear-gradient(180deg,#0b1f29 0%,#0E4D64 44%,#0d5570 100%)!important; }"
+    + ".login{ position:relative; overflow:hidden; background:radial-gradient(130% 80% at 80% 6%, rgba(232,96,32,.5) 0%, rgba(232,96,32,.12) 34%, rgba(232,96,32,0) 52%), linear-gradient(180deg,#06212b 0%,#0E4D64 52%,#0a3848 100%)!important; }"
+    + ".login .lg-top{ position:relative; }"
+    + ".login .lg-logo,.login .lg-title,.login .lg-kicker,.login .lg-tag{ position:relative; z-index:3; }"
+    + ".login .lg-flare{ position:absolute; top:-30px; right:54px; width:170px; height:300px; z-index:1; pointer-events:none; background:radial-gradient(closest-side, rgba(255,176,92,.6), rgba(255,120,50,.18) 55%, rgba(255,120,50,0) 74%); filter:blur(4px); animation:flareFlick 3.6s ease-in-out infinite; }"
+    + "@keyframes flareFlick{ 0%,100%{ opacity:.78; transform:scale(1) translateY(0); } 45%{ opacity:1; transform:scale(1.05) translateY(-4px); } 70%{ opacity:.9; transform:scale(1.02); } }"
+    + ".login .lg-skyline{ position:absolute; left:0; right:0; bottom:0; height:190px; z-index:1; opacity:.92; pointer-events:none; background:bottom center / cover no-repeat url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 1200 200%27 preserveAspectRatio=%27xMidYMax slice%27%3E%3Cg fill=%27%23061f28%27%3E%3Crect x=%270%27 y=%27188%27 width=%271200%27 height=%2712%27/%3E%3Crect x=%2740%27 y=%27108%27 width=%2722%27 height=%2780%27/%3E%3Crect x=%2768%27 y=%2792%27 width=%2722%27 height=%2796%27/%3E%3Crect x=%27120%27 y=%27128%27 width=%2766%27 height=%2760%27/%3E%3Crect x=%27210%27 y=%2772%27 width=%2718%27 height=%27116%27/%3E%3Ccircle cx=%27219%27 cy=%2772%27 r=%2711%27/%3E%3Crect x=%27270%27 y=%27138%27 width=%27100%27 height=%2750%27/%3E%3Ccircle cx=%27430%27 cy=%27160%27 r=%2728%27/%3E%3Ccircle cx=%27486%27 cy=%27166%27 r=%2722%27/%3E%3Crect x=%27548%27 y=%2796%27 width=%2722%27 height=%2792%27/%3E%3Crect x=%27576%27 y=%27112%27 width=%2722%27 height=%2776%27/%3E%3Crect x=%27640%27 y=%27132%27 width=%27130%27 height=%2756%27/%3E%3Crect x=%27812%27 y=%2786%27 width=%2716%27 height=%27102%27/%3E%3Crect x=%27834%27 y=%27100%27 width=%2716%27 height=%2788%27/%3E%3Crect x=%27900%27 y=%27146%27 width=%27150%27 height=%2742%27/%3E%3C/g%3E%3Cg stroke=%27%23061f28%27 stroke-width=%276%27%3E%3Cline x1=%270%27 y1=%27150%27 x2=%271200%27 y2=%27150%27/%3E%3C/g%3E%3Crect x=%271086%27 y=%2748%27 width=%2712%27 height=%27140%27 fill=%27%23061f28%27/%3E%3Cpath d=%27M1092 50 c16 -12 12 -32 0 -42 c3 14 -12 16 -12 26 c0 8 5 13 12 16z%27 fill=%27%23FF8A33%27/%3E%3Cpath d=%27M1092 50 c9 -8 7 -20 0 -27 c1 9 -7 10 -7 17 c0 5 3 8 7 10z%27 fill=%27%23FFD27A%27/%3E%3C/svg%3E'); }"
     + ".man-table{ display:flex; flex-direction:column; gap:12px; }"
     + ".man-group{ background:var(--surface); border:1px solid var(--border); border-radius:10px; overflow:hidden; }"
     + ".man-ghead{ display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:var(--surface-2); border-bottom:1px solid var(--border); }"
@@ -1846,7 +1851,7 @@ class ScreenGuard extends React.Component {
 }
 
 function App(){
-  const APP_VERSION = "v2026.06.21 · build 24";
+  const APP_VERSION = "v2026.06.21 · build 25";
   const [lang, setLangState] = useState(LANG);
   LANG = lang;
   const toggleLang = () => { const nx = lang === "tr" ? "en" : "tr"; LANG = nx; setLangState(nx); try{ localStorage.setItem("siteapp_lang", nx); }catch(e){} };
@@ -2029,6 +2034,8 @@ function App(){
         {!online && <div className="offline-bar">{t("No internet — changes won\u2019t be saved")}</div>}
         <button className="lang-corner" onClick={toggleLang}>{lang === "tr" ? "TR" : "EN"}</button>
         <div className="lg-top">
+          <div className="lg-skyline" />
+          <div className="lg-flare" />
           <div className="lg-logo"><Icon name="flame" size={36} color="#fff" /></div>
           <div className="lg-title" style={{marginBottom:4, fontSize:40, fontWeight:900, letterSpacing:"-.03em"}}>{project.name}</div>
           <div className="lg-kicker" style={{letterSpacing:".2em", fontSize:10.5}}>{project.kicker}</div>
