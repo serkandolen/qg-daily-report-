@@ -456,10 +456,10 @@ function EngCard({ issue, onToggle, isAdmin }){
   );
 }
 
-function TopBar({ session, project, openCount, onProfile, onRecords, onBell, lang, onLang }){
+function TopBar({ session, project, openCount, onProfile, onRecords, onBell, onAbout, lang, onLang }){
   return (
     <div className="topbar">
-      <div className="brand-mark"><Icon name="flame" size={20} /></div>
+      <button className="brand-mark" onClick={onAbout} title="SECOSYS" style={{ border:"none", cursor:"pointer", padding:0 }}><Icon name="flame" size={20} /></button>
       <div className="t-titles">
         <span className="t-title">{project.name}</span>
         <span className="t-kicker" style={{marginTop:1}}>{project.kicker}</span>
@@ -1603,6 +1603,7 @@ const readCache = (k) => { try{ return JSON.parse(localStorage.getItem(k)); }cat
 const writeCache = (k,v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} };
 
 function App(){
+  const APP_VERSION = "v2026.06.20 · build 2";
   const [lang, setLangState] = useState(LANG);
   LANG = lang;
   const toggleLang = () => { const nx = lang === "tr" ? "en" : "tr"; LANG = nx; setLangState(nx); try{ localStorage.setItem("siteapp_lang", nx); }catch(e){} };
@@ -1778,14 +1779,14 @@ function App(){
           {loginErr && <div className="alert">{loginErr}</div>}
           <div className="field">
             <label className="label">{t("Name")}</label>
-            <select className="select" value={loginName} onChange={e => { setLoginName(e.target.value); setLoginErr(""); }}>
+            <select className="select" value={loginName} autoComplete="off" onChange={e => { setLoginName(e.target.value); setLoginErr(""); }}>
               <option value="">{t("— Select —")}</option>
               {loginUsers.map(s => <option key={s}>{s}</option>)}
             </select>
           </div>
           <div className="field">
             <label className="label">{t("Password")}</label>
-            <input type="password" className="input" value={loginPw}
+            <input type="password" className="input" value={loginPw} autoComplete="new-password"
               onChange={e => { setLoginPw(e.target.value); setLoginErr(""); }}
               onKeyDown={e => e.key === "Enter" && handleLogin()} placeholder={t("Enter your password")} />
           </div>
@@ -1808,7 +1809,7 @@ function App(){
 
   return (
     <div className="app">
-      <TopBar session={session} project={project} openCount={openCount} lang={lang} onLang={toggleLang}
+      <TopBar session={session} project={project} openCount={openCount} lang={lang} onLang={toggleLang} onAbout={()=>setSheet("about")}
         onProfile={() => setSheet("profile")}
         onRecords={() => setTab("records")}
         onBell={() => setTab("engineering")} />
@@ -1850,6 +1851,20 @@ function App(){
       </div>
 
       <BottomNav tab={tab} setTab={setTab} items={navItems} />
+
+      {sheet === "about" && (
+        <Sheet onClose={() => setSheet(null)}>
+          <div style={{ textAlign:"center", padding:"6px 6px 14px" }}>
+            <div style={{ width:66, height:66, margin:"2px auto 16px", borderRadius:19, background:"linear-gradient(150deg,#FF8A33,#E0322E)", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 8px 24px rgba(224,50,46,.42)" }}>
+              <Icon name="flame" size={34} color="#fff" />
+            </div>
+            <div style={{ fontSize:26, fontWeight:800, letterSpacing:"-.02em" }}>SECOSYS</div>
+            <div style={{ fontSize:12.5, color:"var(--accent)", fontWeight:700, letterSpacing:".16em", textTransform:"uppercase", marginTop:5 }}>Create an Ecosystem</div>
+            <div style={{ fontSize:14, color:"var(--text-2)", marginTop:16 }}>Created by <strong style={{ color:"var(--text)" }}>Serkan Dölen</strong></div>
+            <div style={{ fontSize:11, color:"var(--text-3)", marginTop:8 }}>{APP_VERSION}</div>
+          </div>
+        </Sheet>
+      )}
 
       {sheet === "profile" && (
         <Sheet onClose={() => setSheet(null)}>
