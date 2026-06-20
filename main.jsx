@@ -1551,7 +1551,7 @@ const readCache = (k) => { try{ return JSON.parse(localStorage.getItem(k)); }cat
 const writeCache = (k,v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} };
 
 function App(){
-  const APP_VERSION = "v2026.06.20 · build 6";
+  const APP_VERSION = "v2026.06.20 · build 8";
   const [lang, setLangState] = useState(LANG);
   LANG = lang;
   const toggleLang = () => { const nx = lang === "tr" ? "en" : "tr"; LANG = nx; setLangState(nx); try{ localStorage.setItem("siteapp_lang", nx); }catch(e){} };
@@ -1621,8 +1621,8 @@ function App(){
   /* ── Login ── */
   const handleLogin = () => {
     if(!loginName){ setLoginErr("Please select your name."); return; }
-    if(users[loginName] === loginPw){
-      const s = { name:loginName, isAdmin:loginName===ADMIN_USER, isGuest:loginName===GUEST_USER };
+    if(String(users[loginName]).trim() === String(loginPw).trim()){
+      const s = { name:loginName, isAdmin:loginName.toLowerCase()===ADMIN_USER.toLowerCase(), isGuest:loginName.toLowerCase()===GUEST_USER.toLowerCase() };
       setSession(s); setLoginErr(""); setTab(s.isGuest ? "summary" : "report");
     } else { setLoginErr("Incorrect password."); setLoginPw(""); }
   };
