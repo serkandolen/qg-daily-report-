@@ -70,7 +70,7 @@ const DEFAULT_AREAS = [];   // no sample areas — each project loads its own (s
 const DEFAULT_PROJECT = { name:"QATAR TWJV EPC-04", kicker:"SECOSYS", company:"SECOSYS" };
 
 /* ⚠️ Same web-app URL as your current app */
-const GAS_URL = "https://script.google.com/macros/s/AKfycbw-dXlk7atpEpLWHA7YsEOu1GSdD1sMuaaA-H8kWnWYWwS_q7obt309vnUcjIAjJVT9/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxTc05zFKhpgZc5pvlqsUYEYgyFvQFSGzK2WZgIYupH_0vZYImRhWqIm5D_-cREXnL8/exec";
 
 const TAB_MAP = {
   [STORAGE_KEY]:  "Reports",
@@ -1753,7 +1753,7 @@ const readCache = (k) => { try{ return JSON.parse(localStorage.getItem(k)); }cat
 const writeCache = (k,v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} };
 
 function App(){
-  const APP_VERSION = "v2026.06.20 · build 14";
+  const APP_VERSION = "v2026.06.20 · build 15";
   const [lang, setLangState] = useState(LANG);
   LANG = lang;
   const toggleLang = () => { const nx = lang === "tr" ? "en" : "tr"; LANG = nx; setLangState(nx); try{ localStorage.setItem("siteapp_lang", nx); }catch(e){} };
