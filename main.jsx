@@ -65,7 +65,7 @@ const DEFAULT_PASSWORDS = {
   Guest:"guest01"
 };
 const DEFAULT_AREAS = [];   // no sample areas — each project loads its own (sheet / import)
-const DEFAULT_PROJECT = { name:"TWJV QATAR EPC-04", kicker:"SECOSYS", company:"SECOSYS" };
+const DEFAULT_PROJECT = { name:"QATAR TWJV EPC-04", kicker:"SECOSYS", company:"SECOSYS" };
 
 /* ⚠️ Same web-app URL as your current app */
 const GAS_URL = "https://script.google.com/macros/s/AKfycbw-dXlk7atpEpLWHA7YsEOu1GSdD1sMuaaA-H8kWnWYWwS_q7obt309vnUcjIAjJVT9/exec";
@@ -1556,7 +1556,7 @@ const readCache = (k) => { try{ return JSON.parse(localStorage.getItem(k)); }cat
 const writeCache = (k,v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} };
 
 function App(){
-  const APP_VERSION = "v2026.06.20 · build 11";
+  const APP_VERSION = "v2026.06.20 · build 12";
   const [lang, setLangState] = useState(LANG);
   LANG = lang;
   const toggleLang = () => { const nx = lang === "tr" ? "en" : "tr"; LANG = nx; setLangState(nx); try{ localStorage.setItem("siteapp_lang", nx); }catch(e){} };
