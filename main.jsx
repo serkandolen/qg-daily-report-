@@ -376,6 +376,7 @@ const STR_TR = {
   "Update":"Güncelle", "Field remarks…":"Saha açıklaması…",
   "No punch list yet. Admin pastes it into the Punch sheet.":"Henüz punch listesi yok. Admin Punch sayfasına yapıştırır.",
   "Search code, description, subsystem…":"Kod, açıklama, subsystem ara…",
+  "Status":"Durum", "Add photo":"Fotoğraf ekle", "Change photo":"Fotoğrafı değiştir", "Save":"Kaydet",
   "Team chat":"Takım sohbeti", "members":"üye",
   "No messages yet. Say hello! 👋":"Henüz mesaj yok. Merhaba deyin! 👋", "Loading messages…":"Mesajlar yükleniyor…",
   "Type a message…":"Mesaj yazın…",
@@ -1015,15 +1016,49 @@ function normPunch(r){
     remarks:    PF(r, ["Remarks","remarks","REMARKS"]),
     closedAt:   PF(r, ["ClosedAt","closedAt","Closed At","CLOSEDAT"]),
     closedBy:   PF(r, ["ClosedBy","closedBy","Closed By","CLOSEDBY"]),
+    closePhoto: PF(r, ["ClosePhoto","closePhoto","Photo","CLOSEPHOTO"]),
     status:    (PF(r, ["Status","status","STATUS"]) || "Open").toLowerCase().indexOf("clos") === 0 ? "Closed" : "Open",
   };
+}
+
+/* Small JPEG for a sheet cell (~360px, q0.5) so base64 stays under the limit */
+function compressPunchPhoto(file){
+  return new Promise(res => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 360, w0 = img.width, h0 = img.height;
+        const w = w0 > MAX ? MAX : w0, h = w0 > MAX ? Math.round(h0 * MAX / w0) : h0;
+        const c = document.createElement("canvas"); c.width = w; c.height = h;
+        c.getContext("2d").drawImage(img, 0, 0, w, h);
+        res(c.toDataURL("image/jpeg", 0.5));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 function PunchRow({ p, canEdit, onUpdate }){
   const [open, setOpen] = useState(false);
   const [remarks, setRemarks] = useState(p.remarks);
-  const [dirty, setDirty] = useState(false);
+  const [status, setStatus] = useState(p.status);
+  const [photo, setPhoto] = useState(p.closePhoto || "");
+  const [lb, setLb] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const fileRef = useRef();
   const closed = p.status === "Closed";
+  const dirty = remarks !== p.remarks || status !== p.status || photo !== (p.closePhoto || "");
+
+  const pickPhoto = async e => {
+    const f = e.target.files[0]; if(!f) return;
+    setBusy(true);
+    const data = await compressPunchPhoto(f);
+    setPhoto(data); setBusy(false); e.target.value = "";
+  };
+  const save = () => { onUpdate(p.code, { Remarks:remarks, Status:status, ClosePhoto:photo }); setOpen(false); };
+
   return (
     <div className={"eng " + (closed ? "resolved" : "open")} style={{ padding:"12px 14px" }}>
       <div className="eng-meta">
@@ -1048,23 +1083,32 @@ function PunchRow({ p, canEdit, onUpdate }){
           )}
           {open && <>
             <label className="label">{t("Remarks")}</label>
-            <textarea className="textarea" rows={2} value={remarks} onChange={e=>{ setRemarks(e.target.value); setDirty(true); }} placeholder={t("Field remarks…")} />
-            <div style={{ display:"flex", gap:8, margintop:8, marginTop:8 }}>
-              <select className="select" style={{ flex:1 }} value={p.status} onChange={e=>onUpdate(p.code, { Remarks:remarks, Status:e.target.value })}>
-                <option value="Open">{t("Open")}</option>
-                <option value="Closed">{t("Closed")}</option>
-              </select>
-              <button className="btn btn-success" style={{ width:"auto", whiteSpace:"nowrap" }} disabled={!dirty}
-                onClick={()=>{ onUpdate(p.code, { Remarks:remarks, Status:p.status }); setDirty(false); setOpen(false); }}>
-                <Icon name="check" size={15}/> {t("Save")}
-              </button>
+            <textarea className="textarea" rows={2} value={remarks} onChange={e=>setRemarks(e.target.value)} placeholder={t("Field remarks…")} />
+            <label className="label" style={{ marginTop:10 }}>{t("Status")}</label>
+            <select className="select" value={status} onChange={e=>setStatus(e.target.value)}>
+              <option value="Open">{t("Open")}</option>
+              <option value="Closed">{t("Closed")}</option>
+            </select>
+            <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={pickPhoto} style={{ display:"none" }} />
+            <div style={{ display:"flex", gap:8, alignItems:"center", marginTop:10 }}>
+              <button className="btn btn-ghost" style={{ width:"auto" }} onClick={()=>fileRef.current.click()} disabled={busy}><Icon name="camera" size={16}/> {busy ? "…" : (photo ? t("Change photo") : t("Add photo"))}</button>
+              {photo && <div style={{ position:"relative" }}>
+                <img src={photo} onClick={()=>setLb(photo)} style={{ width:46, height:46, objectFit:"cover", borderRadius:8, border:"1px solid var(--border)", cursor:"zoom-in" }} alt="" />
+                <button onClick={()=>setPhoto("")} style={{ position:"absolute", top:-6, right:-6, width:20, height:20, borderRadius:"50%", background:"var(--danger)", border:"none", color:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}><Icon name="x" size={11}/></button>
+              </div>}
             </div>
+            <button className="btn btn-success btn-block" style={{ marginTop:12 }} disabled={!dirty} onClick={save}><Icon name="check" size={15}/> {t("Save")}</button>
           </>}
           {!open && p.remarks && <div style={{ fontSize:12.5, color:"var(--text-2)", marginTop:7, fontStyle:"italic" }}>“{p.remarks}”</div>}
+          {!open && p.closePhoto && <img src={p.closePhoto} onClick={()=>setLb(p.closePhoto)} style={{ width:54, height:54, objectFit:"cover", borderRadius:8, border:"1px solid var(--border)", marginTop:8, cursor:"zoom-in" }} alt="" />}
         </div>
       ) : (
-        p.remarks && <div style={{ fontSize:12.5, color:"var(--text-2)", marginTop:9, paddingTop:9, borderTop:"1px solid var(--border)", fontStyle:"italic" }}>“{p.remarks}”</div>
+        <>
+          {p.remarks && <div style={{ fontSize:12.5, color:"var(--text-2)", marginTop:9, paddingTop:9, borderTop:"1px solid var(--border)", fontStyle:"italic" }}>“{p.remarks}”</div>}
+          {p.closePhoto && <img src={p.closePhoto} onClick={()=>setLb(p.closePhoto)} style={{ width:54, height:54, objectFit:"cover", borderRadius:8, border:"1px solid var(--border)", marginTop:8, cursor:"zoom-in" }} alt="" />}
+        </>
       )}
+      <Lightbox src={lb} onClose={()=>setLb(null)} />
     </div>
   );
 }
@@ -1072,6 +1116,7 @@ function PunchRow({ p, canEdit, onUpdate }){
 function PunchScreen({ session, punches, onUpdate }){
   const [filter, setFilter] = useState("all");
   const [cat, setCat] = useState("all");
+  const [area, setArea] = useState("all");
   const [q, setQ] = useState("");
   const [groupBy, setGroupBy] = useState("category");
   const canEdit = !session.isGuest;
@@ -1081,6 +1126,7 @@ function PunchScreen({ session, punches, onUpdate }){
   const closed = items.filter(p => p.status === "Closed").length;
 
   const cats = [...new Set(items.map(p => p.category))].sort();
+  const punchAreas = [...new Set(items.map(p => p.area).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b), undefined, { numeric:true }));
   const groupKey = groupBy === "category" ? "category" : "subsystem";
   const groups = {};
   items.forEach(p => {
@@ -1094,6 +1140,7 @@ function PunchScreen({ session, punches, onUpdate }){
   const list = items.filter(p =>
     (filter === "all" || p.status.toLowerCase() === filter) &&
     (cat === "all" || p.category === cat) &&
+    (area === "all" || p.area === area) &&
     (!ql || (p.code+" "+p.ssDesc+" "+p.description+" "+p.subsystem+" "+p.area).toLowerCase().includes(ql))
   );
 
@@ -1150,6 +1197,12 @@ function PunchScreen({ session, punches, onUpdate }){
             <div className="segmented">
               {["all","open","closed"].map(f => <button key={f} className={filter===f?"on":""} onClick={()=>setFilter(f)}>{t(f.charAt(0).toUpperCase()+f.slice(1))}</button>)}
             </div>
+            {punchAreas.length > 1 && (
+              <select className="select" style={{ width:"auto", minHeight:38, padding:"6px 30px 6px 12px", fontSize:13 }} value={area} onChange={e=>setArea(e.target.value)}>
+                <option value="all">{t("All")} ({t("Area")})</option>
+                {punchAreas.map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
+            )}
             {cats.length > 1 && (
               <select className="select" style={{ width:"auto", minHeight:38, padding:"6px 30px 6px 12px", fontSize:13 }} value={cat} onChange={e=>setCat(e.target.value)}>
                 <option value="all">{t("All")} ({t("Category")})</option>
@@ -1753,7 +1806,7 @@ const readCache = (k) => { try{ return JSON.parse(localStorage.getItem(k)); }cat
 const writeCache = (k,v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} };
 
 function App(){
-  const APP_VERSION = "v2026.06.20 · build 15";
+  const APP_VERSION = "v2026.06.20 · build 17";
   const [lang, setLangState] = useState(LANG);
   LANG = lang;
   const toggleLang = () => { const nx = lang === "tr" ? "en" : "tr"; LANG = nx; setLangState(nx); try{ localStorage.setItem("siteapp_lang", nx); }catch(e){} };
