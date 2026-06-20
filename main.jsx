@@ -217,6 +217,27 @@ async function saveProject(project){
   catch(e){ console.error("saveProject error:", e); }
 }
 
+/* ─────────── Roles (new "Roles" tab: columns group, key, label, order) ─────────── */
+async function loadRoles(){
+  let rows = null;
+  try{ rows = await gasCall({ action:"get", tab:"Roles" }); }catch{ rows = null; }
+  if(!Array.isArray(rows) || !rows.length) return null;
+  const groups = GROUP_META.map(g => ({ id:g.id, label:g.label, roles:[] }));
+  const byId = Object.fromEntries(groups.map(g => [g.id, g]));
+  rows.slice().sort((a,b) => (parseInt(a.order)||0) - (parseInt(b.order)||0))
+    .forEach(r => {
+      const gid = String(r.group||"").toLowerCase();
+      if(byId[gid] && r.key && r.label) byId[gid].roles.push({ key:String(r.key), label:String(r.label) });
+    });
+  return groups;
+}
+async function saveRoles(groups){
+  const rows = [];
+  groups.forEach(g => g.roles.forEach((role, i) => rows.push({ group:g.id, key:role.key, label:role.label, order:i })));
+  try{ await gasCall({ action:"set", tab:"Roles", data: JSON.stringify(rows) }); }
+  catch(e){ console.error("saveRoles error:", e); }
+}
+
 /* ─────────── Avatar colors ─────────── */
 const AVATAR_COLORS = {
   Arun:"#E0622E", Asim:"#1E8E5A", Botan:"#7A5AE0", Alkan:"#C9820B",
@@ -230,8 +251,8 @@ function colorFor(name){
   return PALETTE[h % PALETTE.length];
 }
 
-/* ─────────── Manpower role model (3 groups) ─────────── */
-const ROLE_GROUPS = [
+/* ─────────── Manpower role model (3 fixed groups · editable roles) ─────────── */
+const DEFAULT_ROLE_GROUPS = [
   { id:"direct", label:"Direct", roles:[
     { key:"welder",        label:"Welder" },
     { key:"pipeFitter",    label:"Pipe Fitter" },
@@ -255,23 +276,25 @@ const ROLE_GROUPS = [
     { key:"helperLabour",  label:"Helper / Labour" },
   ]},
 ];
-const ALL_ROLES = ROLE_GROUPS.flatMap(g => g.roles);
-const ROLE_LABEL = Object.fromEntries(ALL_ROLES.map(r => [r.key, r.label]));
+const GROUP_META = [{ id:"direct", label:"Direct" }, { id:"indirect", label:"Indirect" }, { id:"support", label:"Support" }];
+const roleSlug = (s) => (String(s).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "")) || ("role_" + Math.random().toString(36).slice(2,6));
+const allRoles = (groups) => (groups || DEFAULT_ROLE_GROUPS).flatMap(g => g.roles);
 
 const roleVal = (r, key) => { const n = parseInt(r[key]); return isNaN(n) ? 0 : n; };
 /* Works for new (per-role) and old (welder/pipeFitter only) rows. */
-function manStats(r){
-  const g = { direct:0, indirect:0, support:0 };
-  ROLE_GROUPS.forEach(grp => grp.roles.forEach(role => { g[grp.id] += roleVal(r, role.key); }));
-  let total = g.direct + g.indirect + g.support;
+function manStats(r, groups){
+  const G = groups || DEFAULT_ROLE_GROUPS;
+  const g = {}; G.forEach(grp => g[grp.id] = 0);
+  G.forEach(grp => grp.roles.forEach(role => { g[grp.id] += roleVal(r, role.key); }));
+  let total = 0; Object.values(g).forEach(v => total += v);
   if(total === 0 && r.totalManpower){ total = parseInt(r.totalManpower) || 0; }
-  const byRole = ALL_ROLES.map(role => ({ ...role, n:roleVal(r, role.key) })).filter(x => x.n > 0);
-  return { ...g, total, byRole };
+  const byRole = allRoles(G).map(role => ({ ...role, n:roleVal(r, role.key) })).filter(x => x.n > 0);
+  return { direct:g.direct||0, indirect:g.indirect||0, support:g.support||0, total, byRole };
 }
-const blankMan = () => Object.fromEntries(ALL_ROLES.map(r => [r.key, ""]));
+const blankMan = (groups) => Object.fromEntries(allRoles(groups).map(r => [r.key, ""]));
 
 /* ─────────── Empty form factories ─────────── */
-const emptyForm   = (sup="") => ({ date:todayStr(), supervisor:sup, area:"", subArea:"", man:blankMan(), jobDescription:"" });
+const emptyForm   = (sup="", groups) => ({ date:todayStr(), supervisor:sup, area:"", subArea:"", man:blankMan(groups), jobDescription:"" });
 const emptyTarget = (sup="") => ({ date:todayStr(), supervisor:sup, area:"", weldTarget:"", fitUpTarget:"", tpCompletion:"" });
 const emptyEng    = () => ({ date:todayStr(), area:"", subArea:"", description:"", photos:[] });
 
@@ -489,12 +512,12 @@ function Combobox({ value, onChange, options=[], placeholder, disabled }){
 
 /* ═══════════════════ SCREENS ═══════════════════ */
 /* ════════════════════ REPORT ════════════════════ */
-function ReportScreen({ session, reports, supervisors, areas, subAreas, onAddSubArea, onSubmit, onDelete, showFlash }){
-  const [form, setForm] = useState(emptyForm(session.name));
+function ReportScreen({ session, reports, supervisors, areas, subAreas, roleGroups, onAddSubArea, onSubmit, onDelete, showFlash }){
+  const [form, setForm] = useState(emptyForm(session.name, roleGroups));
   const [staged, setStaged] = useState([]);
   const [err, setErr] = useState("");
-  const grp = Object.fromEntries(ROLE_GROUPS.map(g => [g.id, g.roles.reduce((s,r)=>s+(parseInt(form.man[r.key])||0),0)]));
-  const total = grp.direct + grp.indirect + grp.support;
+  const grp = Object.fromEntries(roleGroups.map(g => [g.id, g.roles.reduce((s,r)=>s+(parseInt(form.man[r.key])||0),0)]));
+  const total = roleGroups.reduce((s,g)=>s+grp[g.id],0);
 
   const sf = (k,v) => setForm(p => ({ ...p, [k]:v }));
   const sm = (key,v) => setForm(p => ({ ...p, man:{ ...p.man, [key]:v } }));
@@ -506,14 +529,14 @@ function ReportScreen({ session, reports, supervisors, areas, subAreas, onAddSub
     if(total <= 0){ setErr("Enter at least one worker in the manpower table."); return; }
     setErr("");
     if(form.subArea && form.area && !(subAreas[form.area]||[]).includes(form.subArea)) onAddSubArea(form.area, form.subArea);
-    const roleCounts = Object.fromEntries(ALL_ROLES.map(r => [r.key, parseInt(form.man[r.key])||0]));
+    const roleCounts = Object.fromEntries(allRoles(roleGroups).map(r => [r.key, parseInt(form.man[r.key])||0]));
     setStaged(p => [...p, {
       id:makeId("R"), date, supervisor, area, subArea:form.subArea||"-",
       ...roleCounts,
       directTotal:grp.direct, indirectTotal:grp.indirect, supportTotal:grp.support,
       totalManpower:total, jobDescription
     }]);
-    setForm(p => ({ ...p, area:"", subArea:"", man:blankMan(), jobDescription:"" }));
+    setForm(p => ({ ...p, area:"", subArea:"", man:blankMan(roleGroups), jobDescription:"" }));
   };
   const submit = () => {
     if(!staged.length) return;
@@ -600,7 +623,7 @@ function ReportScreen({ session, reports, supervisors, areas, subAreas, onAddSub
         <div className="subpanel">
           <div className="sp-title"><Icon name="user" size={14}/> Manpower <span className="req">*</span></div>
           <div className="man-table">
-            {ROLE_GROUPS.map(g => (
+            {roleGroups.map(g => (
               <div className="man-group" key={g.id}>
                 <div className="man-ghead">
                   <span className={"man-gtag " + g.id}>{g.label}</span>
@@ -645,7 +668,7 @@ function ReportScreen({ session, reports, supervisors, areas, subAreas, onAddSub
                 <div style={{ display:"flex", gap:7, alignItems:"center", flexWrap:"wrap", marginBottom:3 }}>
                   <span className="chip area">{r.area}</span>
                   {r.subArea!=="-" && <span style={{fontSize:11,color:"var(--text-3)"}}>{r.subArea}</span>}
-                  <span style={{fontSize:12,color:"var(--text-2)"}}>{manStats(r).total>0 && <>MP <strong style={{color:"var(--accent)"}}>{manStats(r).total}</strong></>}</span>
+                  <span style={{fontSize:12,color:"var(--text-2)"}}>{manStats(r, roleGroups).total>0 && <>MP <strong style={{color:"var(--accent)"}}>{manStats(r, roleGroups).total}</strong></>}</span>
                 </div>
                 <div style={{ fontSize:12, color:"var(--text-3)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{r.jobDescription}</div>
               </div>
@@ -659,7 +682,7 @@ function ReportScreen({ session, reports, supervisors, areas, subAreas, onAddSub
 }
 
 /* ════════════════════ TARGET ════════════════════ */
-function TargetScreen({ session, reports, supervisors, areas, onSubmit, showFlash }){
+function TargetScreen({ session, reports, supervisors, areas, roleGroups, onSubmit, showFlash }){
   const [form, setForm] = useState(emptyTarget(session.name));
   const [staged, setStaged] = useState([]);
   const [err, setErr] = useState("");
@@ -680,8 +703,8 @@ function TargetScreen({ session, reports, supervisors, areas, onSubmit, showFlas
   };
 
   const areaReports = form.area ? reports.filter(r=>r.date===form.date && r.area===form.area) : [];
-  const aDir = areaReports.reduce((s,r)=>s+manStats(r).direct,0);
-  const aTot = areaReports.reduce((s,r)=>s+manStats(r).total,0);
+  const aDir = areaReports.reduce((s,r)=>s+manStats(r, roleGroups).direct,0);
+  const aTot = areaReports.reduce((s,r)=>s+manStats(r, roleGroups).total,0);
   const aSup = [...new Set(areaReports.map(r=>r.supervisor))].join(", ") || "—";
 
   return (
@@ -878,7 +901,7 @@ function EngScreen({ session, engIssues, areas, subAreas, onAddSubArea, onSubmit
 
 
 /* ════════════════════ SUMMARY ════════════════════ */
-function SummaryScreen({ session, reports, targets, engIssues, onToggle }){
+function SummaryScreen({ session, reports, targets, engIssues, roleGroups, onToggle }){
   const [sumDate, setSumDate] = useState(todayStr());
   const isToday = sumDate === todayStr();
 
@@ -889,11 +912,11 @@ function SummaryScreen({ session, reports, targets, engIssues, onToggle }){
   const areaMap = {};
   sumReports.forEach(r => {
     if(!areaMap[r.area]) areaMap[r.area] = { direct:0, indirect:0, support:0, total:0, entries:[] };
-    const a = areaMap[r.area]; const m = manStats(r);
+    const a = areaMap[r.area]; const m = manStats(r, roleGroups);
     a.direct += m.direct; a.indirect += m.indirect; a.support += m.support; a.total += m.total; a.entries.push(r);
   });
-  const sumMan = k => sumReports.reduce((s,r)=>s+manStats(r)[k],0);
-  const tradeTotals = ALL_ROLES.map(role => ({ ...role, n:sumReports.reduce((s,r)=>s+roleVal(r,role.key),0) })).filter(x=>x.n>0);
+  const sumMan = k => sumReports.reduce((s,r)=>s+manStats(r, roleGroups)[k],0);
+  const tradeTotals = allRoles(roleGroups).map(role => ({ ...role, n:sumReports.reduce((s,r)=>s+roleVal(r,role.key),0) })).filter(x=>x.n>0);
   const openOnDate = engIssues.filter(e=>{
     const sub = (e.submittedAt||e.date).slice(0,10);
     if((e.status||"open")==="open") return e.date <= sumDate;
@@ -997,9 +1020,10 @@ function SummaryScreen({ session, reports, targets, engIssues, onToggle }){
 }
 
 /* ════════════════════ RECORDS (admin) ════════════════════ */
-function RecordsScreen({ session, reports, targets, engIssues, supervisors, areas, subAreas, users, project,
+function RecordsScreen({ session, reports, targets, engIssues, supervisors, areas, subAreas, users, project, roleGroups,
   onToggle, onDeleteReport, onAddSup, onRemoveSup, onRenameSup, onSetPw,
-  onAddArea, onRemoveArea, onRenameArea, onAddSubArea, onRemoveSubArea, onImportAreaMap, onUpdateProject, showFlash }){
+  onAddArea, onRemoveArea, onRenameArea, onAddSubArea, onRemoveSubArea, onImportAreaMap, onUpdateProject,
+  onAddRole, onRemoveRole, onRenameRole, showFlash }){
   const [fSup, setFSup] = useState("All");
   const [fArea, setFArea] = useState("All");
   const [fDate, setFDate] = useState("");
@@ -1017,12 +1041,14 @@ function RecordsScreen({ session, reports, targets, engIssues, supervisors, area
   const [bulkText, setBulkText] = useState("");
   const [proj, setProj] = useState(project);
   const [confirmDel, setConfirmDel] = useState(null);
+  const [newRole, setNewRole] = useState({});
+  const [roleEdit, setRoleEdit] = useState({});
 
   const fReports = reports.filter(r=>(fSup==="All"||r.supervisor===fSup)&&(fArea==="All"||r.area===fArea)&&(!fDate||r.date===fDate)).slice().sort((a,b)=>b.date.localeCompare(a.date));
   const fEng = engIssues.filter(r=>(fArea==="All"||r.area===fArea)&&(!fDate||r.date===fDate)&&(engFilter==="all"||(r.status||"open")===engFilter)).slice().sort((a,b)=>b.date.localeCompare(a.date));
   const fTargets = targets.filter(t=>(fSup==="All"||t.supervisor===fSup)&&(!fDate||t.date===fDate)).slice().sort((a,b)=>b.date.localeCompare(a.date));
   const sum = k => fReports.reduce((s,r)=>s+r[k],0);
-  const sumMan = k => fReports.reduce((s,r)=>s+manStats(r)[k],0);
+  const sumMan = k => fReports.reduce((s,r)=>s+manStats(r, roleGroups)[k],0);
 
   const csv = (rows, head, mapRow, name) => {
     const lines = [head.join(","), ...rows.map(r => mapRow(r).map(c=>`"${String(c??"").replace(/"/g,'""')}"`).join(","))];
@@ -1133,7 +1159,7 @@ function RecordsScreen({ session, reports, targets, engIssues, supervisors, area
         <div className="card pad">
           <div className="section-head">
             <span className="bar"/><span className="st">Manpower records</span>
-            <button className="btn btn-ghost btn-sm right" onClick={()=>csv(fReports,["Date","Supervisor","Area","Sub-Area",...ALL_ROLES.map(r=>r.label),"Direct","Indirect","Support","Total","Job Description"],r=>{ const m=manStats(r); return [r.date,r.supervisor,r.area,r.subArea,...ALL_ROLES.map(role=>roleVal(r,role.key)),m.direct,m.indirect,m.support,m.total,r.jobDescription]; },"Manpower")}><Icon name="download" size={14}/> CSV</button>
+            <button className="btn btn-ghost btn-sm right" onClick={()=>csv(fReports,["Date","Supervisor","Area","Sub-Area",...allRoles(roleGroups).map(r=>r.label),"Direct","Indirect","Support","Total","Job Description"],r=>{ const m=manStats(r, roleGroups); return [r.date,r.supervisor,r.area,r.subArea,...allRoles(roleGroups).map(role=>roleVal(r,role.key)),m.direct,m.indirect,m.support,m.total,r.jobDescription]; },"Manpower")}><Icon name="download" size={14}/> CSV</button>
           </div>
           {fReports.length===0 ? <div className="empty"><div className="ee">🔍</div>No records found.</div> :
             <div className="tbl-wrap">
@@ -1141,7 +1167,7 @@ function RecordsScreen({ session, reports, targets, engIssues, supervisors, area
                 <thead><tr>{["Date","Sup.","Area","Dir","Ind","Sup","Tot"].map(h=><th key={h} className={["Dir","Ind","Sup","Tot"].includes(h)?"num":""}>{h}</th>)}</tr></thead>
                 <tbody>
                   {fReports.map(r => {
-                    const m = manStats(r);
+                    const m = manStats(r, roleGroups);
                     return (
                     <React.Fragment key={r.id}>
                       <tr onClick={()=>setExpanded(expanded===r.id?null:r.id)} style={{ cursor:"pointer" }}>
@@ -1336,6 +1362,55 @@ function RecordsScreen({ session, reports, targets, engIssues, supervisors, area
             </div>
           </div>
 
+          {/* ── MANPOWER ROLES ── */}
+          <div className="card pad" style={{ marginTop:14 }}>
+            <div className="section-head"><span className="bar"/><span className="st"><Icon name="user" size={13} style={{verticalAlign:"-2px"}}/> Manpower roles</span>
+              <span className="right count-pill">{roleGroups.reduce((s,g)=>s+g.roles.length,0)}</span></div>
+            <p style={{ fontSize:12, color:"var(--text-2)", margin:"-6px 0 14px" }}>The crew types supervisors fill in on the Report screen. Three fixed groups — add the roles each project needs.</p>
+
+            {roleGroups.map(g => (
+              <div key={g.id} className="sa-group">
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
+                  <span className={"man-gtag " + g.id}>{g.label}</span>
+                  <span style={{ fontSize:11, color:"var(--text-3)" }}>{g.roles.length} role{g.roles.length===1?"":"s"}</span>
+                </div>
+                {g.roles.map(role => {
+                  const ek = g.id + ":" + role.key;
+                  const renaming = roleEdit[ek] !== undefined;
+                  const used = reports.some(r => roleVal(r, role.key) > 0);
+                  return (
+                    <div key={role.key} className="mgmt-row">
+                      {renaming
+                        ? <input className="input" style={{ minHeight:40, fontSize:14, flex:1 }} autoFocus value={roleEdit[ek]}
+                            onChange={e=>setRoleEdit(s=>({ ...s, [ek]:e.target.value }))}
+                            onKeyDown={e=>{ if(e.key==="Enter"){ onRenameRole(g.id, role.key, roleEdit[ek]); setRoleEdit(s=>{ const c={...s}; delete c[ek]; return c; }); showFlash("Role renamed"); } }} />
+                        : <div style={{ flex:1, display:"flex", alignItems:"center", gap:8 }}>
+                            <span style={{ fontSize:14, fontWeight:600 }}>{role.label}</span>
+                            {used && <span style={{ fontSize:10.5, color:"var(--text-3)" }}>in use</span>}
+                          </div>}
+                      {renaming
+                        ? <div style={{ display:"flex", gap:6 }}>
+                            <button className="sq ok" onClick={()=>{ onRenameRole(g.id, role.key, roleEdit[ek]); setRoleEdit(s=>{ const c={...s}; delete c[ek]; return c; }); showFlash("Role renamed"); }}><Icon name="check" size={15}/></button>
+                            <button className="sq" onClick={()=>setRoleEdit(s=>{ const c={...s}; delete c[ek]; return c; })}><Icon name="x" size={14}/></button>
+                          </div>
+                        : <div style={{ display:"flex", gap:6 }}>
+                            <button className="sq" onClick={()=>setRoleEdit(s=>({ ...s, [ek]:role.label }))}><Icon name="settings" size={15}/></button>
+                            <button className="sq danger" onClick={()=>{ onRemoveRole(g.id, role.key); showFlash(`${role.label} removed · records kept`); }}><Icon name="trash" size={14}/></button>
+                          </div>}
+                    </div>
+                  );
+                })}
+                <div style={{ display:"flex", gap:8, marginTop:9 }}>
+                  <input className="input" style={{ flex:1, minHeight:42, fontSize:13 }} value={newRole[g.id]||""}
+                    onChange={e=>setNewRole(s=>({ ...s, [g.id]:e.target.value }))}
+                    onKeyDown={e=>{ if(e.key==="Enter" && (newRole[g.id]||"").trim()){ onAddRole(g.id, newRole[g.id]); setNewRole(s=>({ ...s, [g.id]:"" })); showFlash("Role added"); } }}
+                    placeholder={`Add ${g.label.toLowerCase()} role…`} />
+                  <button className="sq ok" disabled={!(newRole[g.id]||"").trim()} onClick={()=>{ onAddRole(g.id, newRole[g.id]); setNewRole(s=>({ ...s, [g.id]:"" })); showFlash("Role added"); }}><Icon name="plus" size={16}/></button>
+                </div>
+              </div>
+            ))}
+          </div>
+
           {/* ── PROJECT SETTINGS ── */}
           <div className="card pad" style={{ marginTop:14 }}>
             <div className="section-head"><span className="bar"/><span className="st"><Icon name="settings" size={13} style={{verticalAlign:"-2px"}}/> Project identity</span></div>
@@ -1468,6 +1543,7 @@ function ChatScreen({ session, supervisors, project }){
    before the Sheets "Areas"/"Settings" tabs exist. */
 const AREAS_CACHE = "siteapp_areas_v2";
 const PROJ_CACHE  = "siteapp_project_v2";
+const ROLES_CACHE = "siteapp_roles_v2";
 const readCache = (k) => { try{ return JSON.parse(localStorage.getItem(k)); }catch{ return null; } };
 const writeCache = (k,v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} };
 
@@ -1480,6 +1556,7 @@ function App(){
   const [areas, setAreas]         = useState([]);
   const [subAreas, setSubAreas]   = useState({});
   const [project, setProject]     = useState(DEFAULT_PROJECT);
+  const [roleGroups, setRoleGroups] = useState(DEFAULT_ROLE_GROUPS);
 
   const [reports, setReports]     = useState([]);
   const [engIssues, setEngIssues] = useState([]);
@@ -1521,6 +1598,11 @@ function App(){
       /* Project identity: prefer local cache, else sheet */
       const sheetProj = await loadProject();
       setProject(readCache(PROJ_CACHE) || sheetProj);
+
+      /* Manpower roles: sheet, then local cache, else defaults */
+      const sheetRoles = await loadRoles();
+      const cachedRoles = readCache(ROLES_CACHE);
+      setRoleGroups(cachedRoles || sheetRoles || DEFAULT_ROLE_GROUPS);
 
       setBooting(false);
     })();
@@ -1600,6 +1682,21 @@ function App(){
   /* ── Project identity → Settings sheet + cache ── */
   const updateProject = (obj) => { setProject(obj); writeCache(PROJ_CACHE, obj); saveProject(obj); };
 
+  /* ── Manpower roles → Roles sheet + cache ── */
+  const applyRoles = (next) => { setRoleGroups(next); writeCache(ROLES_CACHE, next); saveRoles(next); };
+  const addRole = (groupId, label) => {
+    const lab = label.trim(); if(!lab) return;
+    const existing = new Set(allRoles(roleGroups).map(r => r.key));
+    let key = roleSlug(lab); while(existing.has(key)) key += "_" + Math.random().toString(36).slice(2,4);
+    applyRoles(roleGroups.map(g => g.id === groupId ? { ...g, roles:[...g.roles, { key, label:lab }] } : g));
+  };
+  const removeRole = (groupId, key) =>
+    applyRoles(roleGroups.map(g => g.id === groupId ? { ...g, roles:g.roles.filter(r => r.key !== key) } : g));
+  const renameRole = (groupId, key, label) => {
+    const lab = label.trim(); if(!lab) return;
+    applyRoles(roleGroups.map(g => g.id === groupId ? { ...g, roles:g.roles.map(r => r.key === key ? { ...r, label:lab } : r) } : g));
+  };
+
   /* ── Boot splash ── */
   if(booting){
     return <div className="boot"><div className="spin" /><div>Loading site data…</div></div>;
@@ -1662,12 +1759,12 @@ function App(){
       <div className="screen" key={tab}>
         {tab === "report" && (
           <ReportScreen session={session} reports={reports} supervisors={supervisors}
-            areas={areas} subAreas={subAreas} onAddSubArea={addSubArea}
+            areas={areas} subAreas={subAreas} roleGroups={roleGroups} onAddSubArea={addSubArea}
             onSubmit={submitReports} onDelete={deleteReport} showFlash={showFlash} />
         )}
         {tab === "target" && (
           <TargetScreen session={session} reports={reports} supervisors={supervisors}
-            areas={areas} onSubmit={submitTargets} showFlash={showFlash} />
+            areas={areas} roleGroups={roleGroups} onSubmit={submitTargets} showFlash={showFlash} />
         )}
         {tab === "engineering" && (
           <EngScreen session={session} engIssues={engIssues}
@@ -1676,19 +1773,20 @@ function App(){
         )}
         {tab === "summary" && (
           <SummaryScreen session={session} reports={reports} targets={targets}
-            engIssues={engIssues} onToggle={toggleEng} />
+            engIssues={engIssues} roleGroups={roleGroups} onToggle={toggleEng} />
         )}
         {tab === "chat" && (
           <ChatScreen session={session} supervisors={supervisors} project={project} />
         )}
         {tab === "records" && session.isAdmin && (
           <RecordsScreen session={session} reports={reports} targets={targets} engIssues={engIssues}
-            supervisors={supervisors} areas={areas} subAreas={subAreas} users={users} project={project}
+            supervisors={supervisors} areas={areas} subAreas={subAreas} users={users} project={project} roleGroups={roleGroups}
             onToggle={toggleEng} onDeleteReport={deleteReport}
             onAddSup={addSup} onRemoveSup={removeSup} onRenameSup={renameSup} onSetPw={setPassword}
             onAddArea={addArea} onRemoveArea={removeArea} onRenameArea={renameArea}
             onAddSubArea={addSubArea} onRemoveSubArea={removeSubArea} onImportAreaMap={importAreaMap}
-            onUpdateProject={updateProject} showFlash={showFlash} />
+            onUpdateProject={updateProject}
+            onAddRole={addRole} onRemoveRole={removeRole} onRenameRole={renameRole} showFlash={showFlash} />
         )}
       </div>
 
