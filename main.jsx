@@ -126,9 +126,14 @@ async function sget(key){
   try{
     const data = await gasCall({ action:"get", tab: TAB_MAP[key] });
     if(key === USERS_KEY){
-      const merged = { ...DEFAULT_PASSWORDS };
-      if(Array.isArray(data) && data.length) data.forEach(r => { if(r.name) merged[r.name] = r.password; });
-      return merged;
+      /* If the Users sheet has rows, use them AS-IS (so removed supervisors
+         stay removed). Fall back to defaults only when the sheet is empty. */
+      if(Array.isArray(data) && data.length){
+        const obj = {};
+        data.forEach(r => { if(r.name) obj[r.name] = r.password; });
+        return obj;
+      }
+      return { ...DEFAULT_PASSWORDS };
     }
     return Array.isArray(data) ? data : [];
   }catch{ return null; }
@@ -2030,7 +2035,7 @@ class ScreenGuard extends React.Component {
 }
 
 function App(){
-  const APP_VERSION = "v2026.06.21 · build 33";
+  const APP_VERSION = "v2026.06.21 · build 34";
   const [lang, setLangState] = useState(LANG);
   LANG = lang;
   const toggleLang = () => { const nx = lang === "tr" ? "en" : "tr"; LANG = nx; setLangState(nx); try{ localStorage.setItem("siteapp_lang", nx); }catch(e){} };
