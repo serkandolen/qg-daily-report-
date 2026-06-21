@@ -374,6 +374,7 @@ const STR_TR = {
   "Save weekly target":"Haftalık hedefi kaydet", "Weekly target saved":"Haftalık hedef kaydedildi",
   "Weeks":"Haftalar", "Week":"Hafta", "Enter a week number.":"Hafta numarası girin.",
   "Weekly targets are under the Weekly tab.":"Haftalık hedefler Haftalık sekmesinde.",
+  "Updated":"Güncellendi", "updated":"güncellendi",
   "targets submitted":"hedef gönderildi", "Enter at least one target value.":"En az bir hedef değeri girin.",
   "Please fill Date, Supervisor and Area.":"Tarih, Şef ve Alan girin.", "Areas":"Alan",
   "Fit-Up":"Fit-Up", "Welding":"Kaynak", "Bolting":"Cıvatalama", "Support":"Destek",
@@ -1542,6 +1543,7 @@ function RecordsScreen({ session, reports, targets, engIssues, supervisors, area
   const [newSupPw, setNewSupPw] = useState("");
   const [pwEdit, setPwEdit] = useState({});
   const [nameEdit, setNameEdit] = useState({});
+  const [rnPw, setRnPw] = useState({});
   const [newArea, setNewArea] = useState("");
   const [areaEdit, setAreaEdit] = useState({});
   const [newSA, setNewSA] = useState({});
@@ -1607,9 +1609,15 @@ function RecordsScreen({ session, reports, targets, engIssues, supervisors, area
   };
   const saveRename = (name) => {
     const nn = (nameEdit[name]||"").trim();
-    if(!nn || nn===name) { setNameEdit(s=>({ ...s, [name]:undefined })); return; }
-    if(supervisors.includes(nn)) { showFlash(`"${nn}" already exists`); return; }
-    onRenameSup(name, nn); setNameEdit(s=>{ const c={...s}; delete c[name]; return c; }); showFlash(`Renamed to ${nn}`);
+    const np = (rnPw[name] !== undefined ? rnPw[name] : (users[name]||"")).trim();
+    const nameChanged = nn && nn !== name;
+    if(nameChanged && supervisors.includes(nn)) { showFlash(`"${nn}" already exists`); return; }
+    if(nameChanged) onRenameSup(name, nn);
+    const finalName = nameChanged ? nn : name;
+    if(np && np !== (users[name]||"")) onSetPw(finalName, np);
+    setNameEdit(s=>{ const c={...s}; delete c[name]; return c; });
+    setRnPw(s=>{ const c={...s}; delete c[name]; return c; });
+    showFlash(nameChanged ? `${t("Updated")}: ${finalName}` : `${name} ${t("updated")}`);
   };
   const addSup = () => {
     const n = newSup.trim();
@@ -1797,13 +1805,19 @@ function RecordsScreen({ session, reports, targets, engIssues, supervisors, area
                   <Avatar name={name} size={38} />
                   <div style={{ flex:1, minWidth:0 }}>
                     {renaming
-                      ? <input className="input" style={{ minHeight:40, fontSize:14 }} autoFocus value={nameEdit[name]}
-                          onChange={e=>setNameEdit(s=>({ ...s, [name]:e.target.value }))}
-                          onKeyDown={e=>e.key==="Enter"&&saveRename(name)} />
+                      ? <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                          <input className="input" style={{ minHeight:40, fontSize:14 }} autoFocus value={nameEdit[name]}
+                            onChange={e=>setNameEdit(s=>({ ...s, [name]:e.target.value }))}
+                            onKeyDown={e=>e.key==="Enter"&&saveRename(name)} placeholder="Name" />
+                          <input className="input" style={{ minHeight:40, fontSize:14 }}
+                            value={rnPw[name] !== undefined ? rnPw[name] : (users[name]||"")}
+                            onChange={e=>setRnPw(s=>({ ...s, [name]:e.target.value }))}
+                            onKeyDown={e=>e.key==="Enter"&&saveRename(name)} placeholder="Password" />
+                        </div>
                       : <div style={{ fontSize:15, fontWeight:700, display:"flex", alignItems:"center", gap:6 }}>
                           {name} {isAdmin && <span className="pill" style={{ background:"var(--accent-soft)", color:"var(--accent)" }}>Admin</span>}
                         </div>}
-                    <div style={{ fontSize:11, color:"var(--text-3)", marginTop:2 }}>Password: <code>{users[name]||"—"}</code></div>
+                    {!renaming && <div style={{ fontSize:11, color:"var(--text-3)", marginTop:2 }}>Password: <code>{users[name]||"—"}</code></div>}
                   </div>
                   {renaming
                     ? <div style={{ display:"flex", gap:6 }}>
@@ -2018,7 +2032,7 @@ class ScreenGuard extends React.Component {
 }
 
 function App(){
-  const APP_VERSION = "v2026.06.21 · build 31";
+  const APP_VERSION = "v2026.06.21 · build 32";
   const [lang, setLangState] = useState(LANG);
   LANG = lang;
   const toggleLang = () => { const nx = lang === "tr" ? "en" : "tr"; LANG = nx; setLangState(nx); try{ localStorage.setItem("siteapp_lang", nx); }catch(e){} };
