@@ -373,6 +373,7 @@ const STR_TR = {
   "Week No":"Hafta No", "Plan vs Actual":"Plan / Gerçekleşen", "Plan":"Plan", "Actual":"Gerçek", "Metric":"Kalem",
   "Save weekly target":"Haftalık hedefi kaydet", "Weekly target saved":"Haftalık hedef kaydedildi",
   "Weeks":"Haftalar", "Week":"Hafta", "Enter a week number.":"Hafta numarası girin.",
+  "Weekly targets are under the Weekly tab.":"Haftalık hedefler Haftalık sekmesinde.",
   "targets submitted":"hedef gönderildi", "Enter at least one target value.":"En az bir hedef değeri girin.",
   "Please fill Date, Supervisor and Area.":"Tarih, Şef ve Alan girin.", "Areas":"Alan",
   "Fit-Up":"Fit-Up", "Welding":"Kaynak", "Bolting":"Cıvatalama", "Support":"Destek",
@@ -895,7 +896,10 @@ function TargetScreen({ session, reports, supervisors, areas, targets, weeklyTar
         <button className={mode==="weekly"?"on":""} style={{ flex:1 }} onClick={()=>setMode("weekly")}>{t("Weekly Target")}</button>
       </div>
 
-      {mode==="daily" && <>
+      {mode==="daily" && session.isGuest && (
+        <div className="empty"><div className="ee">📅</div>{t("Weekly targets are under the Weekly tab.")}</div>
+      )}
+      {mode==="daily" && !session.isGuest && <>
       {staged.length > 0 && (
         <div className="pending" style={{ borderColor:"var(--info)" }}>
           <div className="ph">
@@ -963,6 +967,7 @@ function TargetScreen({ session, reports, supervisors, areas, targets, weeklyTar
       </>}
 
       {mode==="weekly" && <>
+      {!session.isGuest &&
       <div className="card pad">
         <div className="section-head"><span className="bar" style={{background:"var(--primary)"}}/><span className="st" style={{color:"var(--primary)"}}><Icon name="calendar" size={13} style={{verticalAlign:"-2px"}}/> {t("New weekly target")}</span></div>
         {werr && <div className="alert">{werr}</div>}
@@ -991,6 +996,7 @@ function TargetScreen({ session, reports, supervisors, areas, targets, weeklyTar
         </div>
         <button className="btn btn-primary btn-block" style={{ marginTop:14 }} onClick={wsubmit}><Icon name="check" size={16}/> {t("Save weekly target")}</button>
       </div>
+      }
 
       {weekKeys.length > 0 && (
         <div style={{ marginTop:18 }}>
@@ -1083,6 +1089,7 @@ function EngScreen({ session, engIssues, areas, subAreas, onAddSubArea, onSubmit
 
       {openCount > 0 && <div className="banner danger"><Icon name="eng" size={17}/> {tn("openPending", openCount)}</div>}
 
+      {!session.isGuest && <>
       {staged.length > 0 && (
         <div className="pending" style={{ borderColor:"var(--info)" }}>
           <div className="ph">
@@ -1137,6 +1144,7 @@ function EngScreen({ session, engIssues, areas, subAreas, onAddSubArea, onSubmit
         <button className="btn btn-outline btn-block" style={{ color:"var(--danger)", borderColor:"var(--danger)" }} onClick={add}><Icon name="plus" size={16}/> {t("Add this issue")}</button>
         {staged.length>0 && <button className="btn btn-success btn-block" onClick={submit}><Icon name="check" size={16}/> {tn("submitIssues", staged.length)}</button>}
       </div>
+      </>}
 
       {engIssues.length > 0 && (
         <div style={{ marginTop:18 }}>
@@ -2010,7 +2018,7 @@ class ScreenGuard extends React.Component {
 }
 
 function App(){
-  const APP_VERSION = "v2026.06.21 · build 29";
+  const APP_VERSION = "v2026.06.21 · build 30";
   const [lang, setLangState] = useState(LANG);
   LANG = lang;
   const toggleLang = () => { const nx = lang === "tr" ? "en" : "tr"; LANG = nx; setLangState(nx); try{ localStorage.setItem("siteapp_lang", nx); }catch(e){} };
@@ -2226,7 +2234,12 @@ function App(){
 
   /* ── Nav items by role ── */
   const navItems = session.isGuest
-    ? [{ id:"summary", label:t("Summary"), icon:"summary" }, { id:"punch", label:t("Punch"), icon:"check" }]
+    ? [
+        { id:"target",      label:t("Target"),  icon:"target" },
+        { id:"engineering", label:t("Issues"),  icon:"eng", badge:openCount },
+        { id:"summary",     label:t("Summary"), icon:"summary" },
+        { id:"punch",       label:t("Punch"),   icon:"check" },
+      ]
     : [
         { id:"report",      label:t("Report"),  icon:"report" },
         { id:"target",      label:t("Target"),  icon:"target" },
