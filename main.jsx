@@ -1529,7 +1529,7 @@ function SummaryScreen({ session, reports, targets, engIssues, roleGroups, onTog
 
 /* ════════════════════ RECORDS (admin) ════════════════════ */
 function RecordsScreen({ session, reports, targets, engIssues, supervisors, areas, subAreas, users, project, roleGroups, adminOnly,
-  onToggle, onDeleteReport, onAddSup, onRemoveSup, onRenameSup, onSetPw,
+  onToggle, onDeleteReport, onAddSup, onRemoveSup, onRenameSup, onEditSup, onSetPw,
   onAddArea, onRemoveArea, onRenameArea, onAddSubArea, onRemoveSubArea, onImportAreaMap, onUpdateProject,
   onAddRole, onRemoveRole, onRenameRole, showFlash }){
   const [fSup, setFSup] = useState("All");
@@ -1612,12 +1612,10 @@ function RecordsScreen({ session, reports, targets, engIssues, supervisors, area
     const np = (rnPw[name] !== undefined ? rnPw[name] : (users[name]||"")).trim();
     const nameChanged = nn && nn !== name;
     if(nameChanged && supervisors.includes(nn)) { showFlash(`"${nn}" already exists`); return; }
-    if(nameChanged) onRenameSup(name, nn);
-    const finalName = nameChanged ? nn : name;
-    if(np && np !== (users[name]||"")) onSetPw(finalName, np);
+    onEditSup(name, nameChanged ? nn : name, np);
     setNameEdit(s=>{ const c={...s}; delete c[name]; return c; });
     setRnPw(s=>{ const c={...s}; delete c[name]; return c; });
-    showFlash(nameChanged ? `${t("Updated")}: ${finalName}` : `${name} ${t("updated")}`);
+    showFlash(nameChanged ? `${t("Updated")}: ${nn}` : `${name} ${t("updated")}`);
   };
   const addSup = () => {
     const n = newSup.trim();
@@ -2032,7 +2030,7 @@ class ScreenGuard extends React.Component {
 }
 
 function App(){
-  const APP_VERSION = "v2026.06.21 · build 32";
+  const APP_VERSION = "v2026.06.21 · build 33";
   const [lang, setLangState] = useState(LANG);
   LANG = lang;
   const toggleLang = () => { const nx = lang === "tr" ? "en" : "tr"; LANG = nx; setLangState(nx); try{ localStorage.setItem("siteapp_lang", nx); }catch(e){} };
@@ -2156,6 +2154,15 @@ function App(){
   const renameSup = (oldN, newN) => {
     setSupervisors(p => p.map(s => s === oldN ? newN : s));
     const c = { ...users }; c[newN] = c[oldN]; delete c[oldN]; persistUsers(c);
+  };
+  const editSup = (oldN, newN, newPw) => {
+    const finalN = (newN && newN.trim()) ? newN.trim() : oldN;
+    setSupervisors(p => p.map(s => s === oldN ? finalN : s));
+    const c = { ...users };
+    const pw = (newPw !== undefined && String(newPw).trim() !== "") ? newPw : (c[oldN] || "");
+    if(finalN !== oldN) delete c[oldN];
+    c[finalN] = pw;
+    persistUsers(c);
   };
   const setPassword = (name, pw) => persistUsers({ ...users, [name]: pw });
 
@@ -2305,7 +2312,7 @@ function App(){
           <RecordsScreen session={session} reports={reports} targets={targets} engIssues={engIssues}
             supervisors={supervisors} areas={areas} subAreas={subAreas} users={users} project={project} roleGroups={roleGroups}
             onToggle={toggleEng} onDeleteReport={deleteReport}
-            onAddSup={addSup} onRemoveSup={removeSup} onRenameSup={renameSup} onSetPw={setPassword}
+            onAddSup={addSup} onRemoveSup={removeSup} onRenameSup={renameSup} onEditSup={editSup} onSetPw={setPassword}
             onAddArea={addArea} onRemoveArea={removeArea} onRenameArea={renameArea}
             onAddSubArea={addSubArea} onRemoveSubArea={removeSubArea} onImportAreaMap={importAreaMap}
             onUpdateProject={updateProject}
@@ -2316,7 +2323,7 @@ function App(){
             supervisors={supervisors} areas={areas} subAreas={subAreas} users={users} project={project} roleGroups={roleGroups}
             adminOnly={true}
             onToggle={toggleEng} onDeleteReport={deleteReport}
-            onAddSup={addSup} onRemoveSup={removeSup} onRenameSup={renameSup} onSetPw={setPassword}
+            onAddSup={addSup} onRemoveSup={removeSup} onRenameSup={renameSup} onEditSup={editSup} onSetPw={setPassword}
             onAddArea={addArea} onRemoveArea={removeArea} onRenameArea={renameArea}
             onAddSubArea={addSubArea} onRemoveSubArea={removeSubArea} onImportAreaMap={importAreaMap}
             onUpdateProject={updateProject}
