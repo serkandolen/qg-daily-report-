@@ -1668,11 +1668,11 @@ function RecordsScreen({ session, reports, targets, engIssues, supervisors, area
         <div className="grid-2">
           <div className="field" style={{ marginBottom:10 }}>
             <label className="label">Supervisor</label>
-            <select className="select" value={fSup} onChange={e=>setFSup(e.target.value)}><option>All</option>{supervisors.map(s=><option key={s}>{s}</option>)}</select>
+            <select className="select" value={fSup} onChange={e=>setFSup(e.target.value)}><option>All</option>{[...supervisors].sort((a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true,sensitivity:"base"})).map(s=><option key={s}>{s}</option>)}</select>
           </div>
           <div className="field" style={{ marginBottom:10 }}>
             <label className="label">Area</label>
-            <select className="select" value={fArea} onChange={e=>setFArea(e.target.value)}><option>All</option>{areas.map(a=><option key={a}>{a}</option>)}</select>
+            <select className="select" value={fArea} onChange={e=>setFArea(e.target.value)}><option>All</option>{[...areas].sort((a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true,sensitivity:"base"})).map(a=><option key={a}>{a}</option>)}</select>
           </div>
         </div>
         <div className="field" style={{ marginBottom:0 }}>
@@ -2018,7 +2018,7 @@ class ScreenGuard extends React.Component {
 }
 
 function App(){
-  const APP_VERSION = "v2026.06.21 · build 30";
+  const APP_VERSION = "v2026.06.21 · build 31";
   const [lang, setLangState] = useState(LANG);
   LANG = lang;
   const toggleLang = () => { const nx = lang === "tr" ? "en" : "tr"; LANG = nx; setLangState(nx); try{ localStorage.setItem("siteapp_lang", nx); }catch(e){} };
