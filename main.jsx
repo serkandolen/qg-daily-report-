@@ -40,7 +40,17 @@ import ReactDOM from "react-dom/client";
     + ".man-row.on .man-inp{ border-color:var(--accent); color:var(--accent); }"
     + ".man-grand{ display:flex; align-items:center; justify-content:space-between; padding:13px 16px; background:var(--accent); color:#fff; border-radius:10px; font-weight:700; }"
     + ".man-grand span:last-child{ font-size:24px; font-weight:800; }"
-    + ".punch-no{ font-size:13px; font-weight:800; color:var(--accent); background:var(--accent-soft); border-radius:6px; padding:2px 8px; letter-spacing:.02em; }";
+    + ".punch-no{ font-size:13px; font-weight:800; color:var(--accent); background:var(--accent-soft); border-radius:6px; padding:2px 8px; letter-spacing:.02em; }"
+    + ".metric-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }"
+    + ".metric-cell{ display:flex; flex-direction:column; }"
+    + ".metric-lbl{ font-size:11px; font-weight:700; color:var(--text-2); margin-bottom:5px; }"
+    + ".metric-unit{ font-size:9px; font-weight:800; color:#fff; background:var(--text-3); border-radius:4px; padding:1px 5px; letter-spacing:.04em; vertical-align:middle; }"
+    + ".wk-head{ display:grid; grid-template-columns:1fr 70px 70px; gap:8px; padding:0 2px 8px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-3); }"
+    + ".wk-head span:not(:first-child){ text-align:center; }"
+    + ".wk-row{ display:grid; grid-template-columns:1fr 70px 70px; gap:8px; align-items:center; padding:5px 2px; border-top:1px solid var(--border); }"
+    + ".wk-metric{ font-size:12.5px; color:var(--text); }"
+    + ".wk-in{ min-height:40px; padding:8px 8px; text-align:center; font-size:14px; }"
+    + ".wk-toggle{ display:flex; align-items:center; gap:10px; width:100%; border:none; background:none; padding:13px 14px; cursor:pointer; }";
   document.head.appendChild(extra);
 })();
 
@@ -55,6 +65,7 @@ const CHAT_KEY     = "qg_chat_v8";
 const TARGETS_KEY  = "qg_targets_v8";
 const AREAS_KEY    = "qg_areas_v8";
 const PUNCH_KEY    = "qg_punch_v8";
+const WEEKLY_KEY   = "qg_weekly_v8";
 const SETTINGS_KEY = "qg_settings_v8";
 
 const ADMIN_USER = "Serkan";
@@ -80,6 +91,7 @@ const TAB_MAP = {
   [TARGETS_KEY]:  "Targets",
   [AREAS_KEY]:    "Areas",
   [PUNCH_KEY]:    "Punch",
+  [WEEKLY_KEY]:   "WeeklyTargets",
   [SETTINGS_KEY]: "Settings",
 };
 
@@ -306,9 +318,25 @@ function manStats(r, groups){
 }
 const blankMan = (groups) => Object.fromEntries(allRoles(groups).map(r => [r.key, ""]));
 
+/* ─────────── Target metric model ─────────── */
+const TARGET_METRICS = [
+  { key:"fitUp",         label:"Fit-Up",           unit:"DI" },
+  { key:"welding",       label:"Welding",          unit:"DI" },
+  { key:"bolting",       label:"Bolting",          unit:"DI" },
+  { key:"support",       label:"Support",          unit:"kg" },
+  { key:"spoolErection", label:"Spool Erection",   unit:"QTY" },
+  { key:"hydroTpQty",    label:"Hydrotest TP",     unit:"QTY" },
+  { key:"hydroTpDi",     label:"Hydrotest TP",     unit:"DI" },
+  { key:"reinstTpQty",   label:"Reinstatement TP", unit:"QTY" },
+  { key:"reinstTpDi",    label:"Reinstatement TP", unit:"DI" },
+];
+const blankMetrics = () => Object.fromEntries(TARGET_METRICS.map(m => [m.key, ""]));
+const metricNum = (r, key) => { const n = parseFloat(r[key]); return isNaN(n) ? 0 : n; };
+
 /* ─────────── Empty form factories ─────────── */
 const emptyForm   = (sup="", groups) => ({ date:todayStr(), supervisor:sup, area:"", subArea:"", man:blankMan(groups), jobDescription:"" });
-const emptyTarget = (sup="") => ({ date:todayStr(), supervisor:sup, area:"", weldTarget:"", fitUpTarget:"", tpCompletion:"" });
+const emptyTarget = (sup="") => ({ date:todayStr(), supervisor:sup, area:"", ...blankMetrics() });
+const emptyWeekly = () => ({ week:"", area:"", plan:blankMetrics(), actual:blankMetrics() });
 const emptyEng    = () => ({ date:todayStr(), area:"", subArea:"", description:"", photos:[] });
 const emptyPunch  = (raisedBy="") => ({ date:todayStr(), punchType:"MPL", punchNo:"", area:"", subArea:"", remarks:"", raisedBy });
 
@@ -341,6 +369,14 @@ const STR_TR = {
   "Describe work performed in this area / sub-area…":"Bu alanda/alt-alanda yapılan işi açıklayın…",
   "Add this entry":"Bu kaydı ekle",
   "Set Targets":"Hedef Belirle", "Welding, fit-up & TP targets per area.":"Alan bazında kaynak, fit-up & TP hedefleri.",
+  "Daily Target":"Günlük Hedef", "Weekly Target":"Haftalık Hedef", "New weekly target":"Yeni haftalık hedef",
+  "Week No":"Hafta No", "Plan vs Actual":"Plan / Gerçekleşen", "Plan":"Plan", "Actual":"Gerçek", "Metric":"Kalem",
+  "Save weekly target":"Haftalık hedefi kaydet", "Weekly target saved":"Haftalık hedef kaydedildi",
+  "Weeks":"Haftalar", "Week":"Hafta", "Enter a week number.":"Hafta numarası girin.",
+  "targets submitted":"hedef gönderildi", "Enter at least one target value.":"En az bir hedef değeri girin.",
+  "Please fill Date, Supervisor and Area.":"Tarih, Şef ve Alan girin.", "Areas":"Alan",
+  "Fit-Up":"Fit-Up", "Welding":"Kaynak", "Bolting":"Cıvatalama", "Support":"Destek",
+  "Spool Erection":"Spool Montaj", "Hydrotest TP":"Hidrotest TP", "Reinstatement TP":"Reinstatement TP",
   "Area target":"Alan hedefi", "Targets for this area":"Bu alan için hedefler",
   "Welding ″":"Kaynak ″", "Fit-Up ″":"Fit-Up ″", "TP No.":"TP No.", "Add target":"Hedef ekle",
   "Engineering":"Mühendislik", "Log NCRs, RFIs, holds & site problems.":"NCR, RFI, hold ve saha sorunlarını kaydedin.",
@@ -782,25 +818,43 @@ function ReportScreen({ session, reports, supervisors, areas, subAreas, roleGrou
 }
 
 /* ════════════════════ TARGET ════════════════════ */
-function TargetScreen({ session, reports, supervisors, areas, roleGroups, onSubmit, showFlash }){
+function MetricGrid({ values, onChange, color }){
+  return (
+    <div className="metric-grid">
+      {TARGET_METRICS.map(m => (
+        <div className="metric-cell" key={m.key}>
+          <label className="metric-lbl">{t(m.label)} <span className="metric-unit">{m.unit}</span></label>
+          <input type="number" min="0" step="0.1" inputMode="decimal" className="input"
+            value={values[m.key]} onChange={e=>onChange(m.key, e.target.value)} placeholder="0" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TargetScreen({ session, reports, supervisors, areas, targets, weeklyTargets, roleGroups, onSubmit, onSubmitWeekly, showFlash }){
+  const [mode, setMode] = useState("daily");
+
+  /* ── Daily target ── */
   const [form, setForm] = useState(emptyTarget(session.name));
   const [staged, setStaged] = useState([]);
   const [err, setErr] = useState("");
   const st = (k,v) => setForm(p=>({ ...p, [k]:v }));
+  const sm = (k,v) => setForm(p=>({ ...p, [k]:v }));
 
   const add = () => {
-    if(!form.date || !form.supervisor || !form.area){ setErr("Please fill Date, Supervisor and Area."); return; }
+    if(!form.date || !form.supervisor || !form.area){ setErr(t("Please fill Date, Supervisor and Area.")); return; }
+    if(TARGET_METRICS.every(m => !String(form[m.key]).trim())){ setErr(t("Enter at least one target value.")); return; }
     setErr("");
-    setStaged(p => [...p, { id:makeId("T"), ...form,
-      weldTarget:form.weldTarget||"-", fitUpTarget:form.fitUpTarget||"-", tpCompletion:form.tpCompletion||"-" }]);
-    setForm(p => ({ ...p, area:"", weldTarget:"", fitUpTarget:"", tpCompletion:"" }));
+    setStaged(p => [...p, { id:makeId("T"), ...form }]);
+    setForm(p => ({ ...p, area:"", ...blankMetrics() }));
   };
   const submit = () => {
     if(!staged.length) return;
     if(typeof navigator !== "undefined" && !navigator.onLine){ showFlash("⚠ " + t("No internet — not saved")); return; }
     onSubmit(staged.map(e=>({ ...e, submittedAt:fmtForSheet() })));
     setStaged([]);
-    showFlash(`${staged.length} ${staged.length===1?"target":"targets"} submitted`);
+    showFlash(`${staged.length} ${t("targets submitted")}`);
   };
 
   const areaReports = form.area ? reports.filter(r=>r.date===form.date && r.area===form.area) : [];
@@ -808,28 +862,60 @@ function TargetScreen({ session, reports, supervisors, areas, roleGroups, onSubm
   const aTot = areaReports.reduce((s,r)=>s+manStats(r, roleGroups).total,0);
   const aSup = [...new Set(areaReports.map(r=>r.supervisor))].join(", ") || "—";
 
+  /* ── Weekly target ── */
+  const [wform, setWform] = useState(emptyWeekly());
+  const [werr, setWerr] = useState("");
+  const [openWeek, setOpenWeek] = useState(null);
+  const setWplan = (k,v) => setWform(p=>({ ...p, plan:{ ...p.plan, [k]:v } }));
+  const setWactual = (k,v) => setWform(p=>({ ...p, actual:{ ...p.actual, [k]:v } }));
+
+  const wsubmit = () => {
+    if(!wform.week){ setWerr(t("Enter a week number.")); return; }
+    if(typeof navigator !== "undefined" && !navigator.onLine){ showFlash("⚠ " + t("No internet — not saved")); return; }
+    setWerr("");
+    const row = { id:makeId("W"), week:String(wform.week), area:wform.area||"-" };
+    TARGET_METRICS.forEach(m => { row[m.key+"_plan"] = wform.plan[m.key]||""; row[m.key+"_actual"] = wform.actual[m.key]||""; });
+    row.submittedAt = fmtForSheet();
+    onSubmitWeekly(row);
+    setWform(emptyWeekly());
+    showFlash(t("Weekly target saved"));
+  };
+
+  /* group weekly rows by week (newest first) */
+  const weekMap = {};
+  (weeklyTargets||[]).forEach(r => { const w = String(r.week); if(!weekMap[w]) weekMap[w] = []; weekMap[w].push(r); });
+  const weekKeys = Object.keys(weekMap).sort((a,b)=>String(b).localeCompare(String(a), undefined, { numeric:true }));
+
   return (
     <div>
-      <h1 className="page-title">{t("Set Targets")}</h1>
-      <p className="page-sub">{t("Welding, fit-up & TP targets per area.")}</p>
+      <h1 className="page-title">{t("Targets")}</h1>
 
+      <div className="segmented" style={{ display:"flex", width:"100%", marginBottom:16 }}>
+        <button className={mode==="daily"?"on":""} style={{ flex:1 }} onClick={()=>setMode("daily")}>{t("Daily Target")}</button>
+        <button className={mode==="weekly"?"on":""} style={{ flex:1 }} onClick={()=>setMode("weekly")}>{t("Weekly Target")}</button>
+      </div>
+
+      {mode==="daily" && <>
       {staged.length > 0 && (
         <div className="pending" style={{ borderColor:"var(--info)" }}>
           <div className="ph">
             <span className="ph-label" style={{ color:"var(--info)" }}>⏳ Pending <span className="count-pill" style={{background:"var(--info)"}}>{staged.length}</span></span>
             <button className="btn btn-success btn-sm" onClick={submit}><Icon name="check" size={14}/> {t("Submit all")}</button>
           </div>
-          {staged.map(e => (
-            <div className="staged-row" key={e.id}>
-              <div style={{ flex:1 }}>
-                <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
-                  <span className="chip area">{e.area}</span>
-                  <span style={{fontSize:12,color:"var(--info)",fontWeight:600}}>Weld {e.weldTarget}″ · Fit {e.fitUpTarget}″ · {e.tpCompletion} TP</span>
+          {staged.map(e => {
+            const filled = TARGET_METRICS.filter(m => String(e[m.key]).trim() && parseFloat(e[m.key])>0);
+            return (
+              <div className="staged-row" key={e.id}>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+                    <span className="chip area">{e.area}</span>
+                    <span style={{fontSize:11.5,color:"var(--text-2)"}}>{filled.map(m=>m.label+" "+e[m.key]+(m.unit==="DI"?"″":"")).join(" · ") || "—"}</span>
+                  </div>
                 </div>
+                <button className="x" onClick={()=>setStaged(p=>p.filter(x=>x.id!==e.id))}><Icon name="x" size={13}/></button>
               </div>
-              <button className="x" onClick={()=>setStaged(p=>p.filter(x=>x.id!==e.id))}><Icon name="x" size={13}/></button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -863,22 +949,93 @@ function TargetScreen({ session, reports, supervisors, areas, roleGroups, onSubm
             <div><div className="sl" style={{fontSize:9.5,color:"var(--text-3)",textTransform:"uppercase",letterSpacing:".06em"}}>Direct</div><div className="tnum" style={{fontSize:22,fontWeight:800,color:"var(--accent)"}}>{aDir||"—"}</div></div>
             <div><div className="sl" style={{fontSize:9.5,color:"var(--text-3)",textTransform:"uppercase",letterSpacing:".06em"}}>Total MP</div><div className="tnum" style={{fontSize:22,fontWeight:800,color:"var(--accent)"}}>{aTot||"—"}</div></div>
             <div><div className="sl" style={{fontSize:9.5,color:"var(--text-3)",textTransform:"uppercase",letterSpacing:".06em"}}>Supervisor</div><div style={{fontSize:13,fontWeight:700,marginTop:4}}>{aSup}</div></div>
-            {areaReports.length===0 && <div style={{gridColumn:"1/-1",fontSize:11.5,color:"var(--text-3)"}}>No manpower submitted for {form.area} yet.</div>}
           </div>
         )}
 
         <div className="subpanel">
           <div className="sp-title" style={{color:"var(--info)"}}><Icon name="target" size={14}/> {t("Targets for this area")}</div>
-          <div className="grid-3">
-            <div><label className="label">{t("Welding ″")}</label><input type="number" min="0" step="0.1" inputMode="decimal" className="input" value={form.weldTarget} onChange={e=>st("weldTarget",e.target.value)} placeholder="24" /></div>
-            <div><label className="label">{t("Fit-Up ″")}</label><input type="number" min="0" step="0.1" inputMode="decimal" className="input" value={form.fitUpTarget} onChange={e=>st("fitUpTarget",e.target.value)} placeholder="36" /></div>
-            <div><label className="label">{t("TP No.")}</label><input type="number" min="0" step="1" inputMode="numeric" className="input" value={form.tpCompletion} onChange={e=>st("tpCompletion",e.target.value)} placeholder="5" /></div>
-          </div>
+          <MetricGrid values={form} onChange={sm} />
         </div>
 
         <button className="btn btn-outline btn-block" style={{ color:"var(--info)", borderColor:"var(--info)" }} onClick={add}><Icon name="plus" size={16}/> {t("Add target")}</button>
         {staged.length > 0 && <button className="btn btn-success btn-block" onClick={submit}><Icon name="check" size={16}/> {tn("submitTargets", staged.length)}</button>}
       </div>
+      </>}
+
+      {mode==="weekly" && <>
+      <div className="card pad">
+        <div className="section-head"><span className="bar" style={{background:"var(--primary)"}}/><span className="st" style={{color:"var(--primary)"}}><Icon name="calendar" size={13} style={{verticalAlign:"-2px"}}/> {t("New weekly target")}</span></div>
+        {werr && <div className="alert">{werr}</div>}
+        <div className="grid-2">
+          <div className="field">
+            <label className="label">{t("Week No")} <span className="req">*</span></label>
+            <input className="input" value={wform.week} onChange={e=>setWform(p=>({ ...p, week:e.target.value }))} placeholder="W-25" />
+          </div>
+          <div className="field">
+            <label className="label">{t("Area")}</label>
+            <select className="select" value={wform.area} onChange={e=>setWform(p=>({ ...p, area:e.target.value }))}>
+              <option value="">{t("All")}</option>{areas.map(a=><option key={a}>{a}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className="subpanel" style={{ marginBottom:0 }}>
+          <div className="sp-title" style={{color:"var(--primary)"}}>{t("Plan vs Actual")}</div>
+          <div className="wk-head"><span>{t("Metric")}</span><span>{t("Plan")}</span><span>{t("Actual")}</span></div>
+          {TARGET_METRICS.map(m => (
+            <div className="wk-row" key={m.key}>
+              <span className="wk-metric">{t(m.label)} <span className="metric-unit">{m.unit}</span></span>
+              <input type="number" min="0" step="0.1" inputMode="decimal" className="input wk-in" value={wform.plan[m.key]} onChange={e=>setWplan(m.key, e.target.value)} placeholder="0" />
+              <input type="number" min="0" step="0.1" inputMode="decimal" className="input wk-in" value={wform.actual[m.key]} onChange={e=>setWactual(m.key, e.target.value)} placeholder="0" />
+            </div>
+          ))}
+        </div>
+        <button className="btn btn-primary btn-block" style={{ marginTop:14 }} onClick={wsubmit}><Icon name="check" size={16}/> {t("Save weekly target")}</button>
+      </div>
+
+      {weekKeys.length > 0 && (
+        <div style={{ marginTop:18 }}>
+          <div className="st" style={{ fontSize:11, fontWeight:700, letterSpacing:".1em", textTransform:"uppercase", color:"var(--text-2)", marginBottom:12 }}>{t("Weeks")}</div>
+          {weekKeys.map(w => {
+            const rows = weekMap[w];
+            const isOpen = openWeek === w;
+            return (
+              <div className="card" key={w} style={{ marginBottom:10, overflow:"hidden" }}>
+                <button className="wk-toggle" onClick={()=>setOpenWeek(isOpen?null:w)}>
+                  <span className="chip" style={{ background:"var(--primary-soft)", color:"var(--primary)", borderColor:"transparent", fontWeight:700 }}>{t("Week")} {w}</span>
+                  <span style={{ fontSize:12, color:"var(--text-3)" }}>{rows.length} {rows.length===1?t("Area"):t("Areas")}</span>
+                  <Icon name="summary" size={16} style={{ marginLeft:"auto", transform:isOpen?"rotate(180deg)":"none", transition:".2s", opacity:.5 }} />
+                </button>
+                {isOpen && rows.map(r => (
+                  <div key={r.id} style={{ padding:"0 14px 12px" }}>
+                    {r.area && r.area !== "-" && <div style={{ fontSize:12, fontWeight:700, color:"var(--text-2)", margin:"6px 0 8px" }}>{r.area}</div>}
+                    <div className="tbl-wrap">
+                      <table className="tbl">
+                        <thead><tr><th>{t("Metric")}</th><th className="num">{t("Plan")}</th><th className="num">{t("Actual")}</th><th className="num">%</th></tr></thead>
+                        <tbody>
+                          {TARGET_METRICS.map(m => {
+                            const pl = metricNum(r, m.key+"_plan"), ac = metricNum(r, m.key+"_actual");
+                            if(pl===0 && ac===0) return null;
+                            const pct = pl>0 ? Math.round(ac/pl*100) : 0;
+                            return (
+                              <tr key={m.key}>
+                                <td style={{ fontSize:12, whiteSpace:"normal" }}>{t(m.label)} <span className="metric-unit">{m.unit}</span></td>
+                                <td className="num">{pl||"—"}</td>
+                                <td className="num" style={{ fontWeight:700 }}>{ac||"—"}</td>
+                                <td className="num" style={{ fontWeight:800, color: pct>=100?"var(--success)":pct>=70?"var(--warn)":"var(--danger)" }}>{pl>0?pct+"%":"—"}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      </>}
     </div>
   );
 }
@@ -1321,22 +1478,26 @@ function SummaryScreen({ session, reports, targets, engIssues, roleGroups, onTog
       {dayTargets.length > 0 && (
         <div className="card pad" style={{ marginTop:14 }}>
           <div className="section-head"><span className="bar" style={{background:"var(--info)"}}/><span className="st" style={{color:"var(--info)"}}>{t("🎯 Area Targets")}</span></div>
-          <div className="tbl-wrap">
-            <table className="tbl">
-              <thead><tr>{["Area","Sup.","Weld","Fit","TP"].map(h=><th key={h} className={h==="Area"||h==="Sup."?"":"num"}>{h}</th>)}</tr></thead>
-              <tbody>
-                {dayTargets.map(t => (
-                  <tr key={t.id}>
-                    <td><span className="chip area">{t.area}</span></td>
-                    <td style={{ fontSize:12, color:"var(--text-2)" }}>{t.supervisor}</td>
-                    <td className="num" style={{ color:"var(--info)", fontWeight:700 }}>{t.weldTarget!=="-"?t.weldTarget+"″":"—"}</td>
-                    <td className="num" style={{ color:"var(--info)", fontWeight:700 }}>{t.fitUpTarget!=="-"?t.fitUpTarget+"″":"—"}</td>
-                    <td className="num" style={{ color:"var(--info)", fontWeight:700 }}>{t.tpCompletion!=="-"?t.tpCompletion:"—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {(() => {
+            const cols = TARGET_METRICS.filter(m => dayTargets.some(t => parseFloat(t[m.key])>0));
+            if(cols.length===0) return <div style={{ fontSize:12, color:"var(--text-3)" }}>—</div>;
+            return (
+              <div className="tbl-wrap">
+                <table className="tbl">
+                  <thead><tr><th>{t("Area")}</th><th>{t("Supervisor")}</th>{cols.map(m=><th key={m.key} className="num">{t(m.label)}<br/><span className="metric-unit">{m.unit}</span></th>)}</tr></thead>
+                  <tbody>
+                    {dayTargets.map(tg => (
+                      <tr key={tg.id}>
+                        <td><span className="chip area">{tg.area}</span></td>
+                        <td style={{ fontSize:12, color:"var(--text-2)" }}>{tg.supervisor}</td>
+                        {cols.map(m => <td key={m.key} className="num" style={{ color:"var(--info)", fontWeight:700 }}>{parseFloat(tg[m.key])>0?tg[m.key]:"—"}</td>)}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -1589,24 +1750,27 @@ function RecordsScreen({ session, reports, targets, engIssues, supervisors, area
         <div className="card pad">
           <div className="section-head">
             <span className="bar" style={{background:"var(--info)"}}/><span className="st" style={{color:"var(--info)"}}>Targets</span>
-            <button className="btn btn-ghost btn-sm right" onClick={()=>csv(fTargets,["Date","Supervisor","Area","Welding","Fit-Up","TP"],r=>[r.date,r.supervisor,r.area,r.weldTarget,r.fitUpTarget,r.tpCompletion],"Targets")}><Icon name="download" size={14}/> CSV</button>
+            <button className="btn btn-ghost btn-sm right" onClick={()=>csv(fTargets,["Date","Supervisor","Area",...TARGET_METRICS.map(m=>m.label+" ("+m.unit+")")],r=>[r.date,r.supervisor,r.area,...TARGET_METRICS.map(m=>r[m.key]||"")],"Targets")}><Icon name="download" size={14}/> CSV</button>
           </div>
           {fTargets.length===0 ? <div className="empty"><div className="ee">🔍</div>No targets found.</div> :
-            <div className="tbl-wrap">
-              <table className="tbl">
-                <thead><tr>{["Date","Sup.","Area","Weld","Fit","TP"].map(h=><th key={h} className={["Weld","Fit","TP"].includes(h)?"num":""}>{h}</th>)}</tr></thead>
-                <tbody>{fTargets.map(t=>(
-                  <tr key={t.id}>
-                    <td style={{ color:"var(--text-2)", fontSize:12 }}>{String(t.date||"").slice(5)}</td>
-                    <td style={{ fontWeight:600 }}>{t.supervisor}</td>
-                    <td><span className="chip area">{t.area}</span></td>
-                    <td className="num" style={{ color:"var(--info)", fontWeight:700 }}>{t.weldTarget!=="-"?t.weldTarget+"″":"—"}</td>
-                    <td className="num" style={{ color:"var(--info)", fontWeight:700 }}>{t.fitUpTarget!=="-"?t.fitUpTarget+"″":"—"}</td>
-                    <td className="num" style={{ color:"var(--info)", fontWeight:700 }}>{t.tpCompletion!=="-"?t.tpCompletion:"—"}</td>
-                  </tr>
-                ))}</tbody>
-              </table>
-            </div>}
+            (() => {
+              const cols = TARGET_METRICS.filter(m => fTargets.some(t => parseFloat(t[m.key])>0));
+              return (
+                <div className="tbl-wrap">
+                  <table className="tbl">
+                    <thead><tr><th>Date</th><th>Sup.</th><th>Area</th>{cols.map(m=><th key={m.key} className="num">{t(m.label)}<br/><span className="metric-unit">{m.unit}</span></th>)}</tr></thead>
+                    <tbody>{fTargets.map(tg=>(
+                      <tr key={tg.id}>
+                        <td style={{ color:"var(--text-2)", fontSize:12 }}>{String(tg.date||"").slice(5)}</td>
+                        <td style={{ fontWeight:600 }}>{tg.supervisor}</td>
+                        <td><span className="chip area">{tg.area}</span></td>
+                        {cols.map(m=><td key={m.key} className="num" style={{ color:"var(--info)", fontWeight:700 }}>{parseFloat(tg[m.key])>0?tg[m.key]:"—"}</td>)}
+                      </tr>
+                    ))}</tbody>
+                  </table>
+                </div>
+              );
+            })()}
         </div>
       )}
 
@@ -1846,7 +2010,7 @@ class ScreenGuard extends React.Component {
 }
 
 function App(){
-  const APP_VERSION = "v2026.06.21 · build 28";
+  const APP_VERSION = "v2026.06.21 · build 29";
   const [lang, setLangState] = useState(LANG);
   LANG = lang;
   const toggleLang = () => { const nx = lang === "tr" ? "en" : "tr"; LANG = nx; setLangState(nx); try{ localStorage.setItem("siteapp_lang", nx); }catch(e){} };
@@ -1870,6 +2034,7 @@ function App(){
   const [engIssues, setEngIssues] = useState([]);
   const [punches, setPunches]     = useState([]);
   const [targets, setTargets]     = useState([]);
+  const [weeklyTargets, setWeeklyTargets] = useState([]);
 
   const [tab, setTab]     = useState("report");
   const [flash, setFlash] = useState("");
@@ -1893,6 +2058,7 @@ function App(){
       if(!u) await sset(USERS_KEY, DEFAULT_PASSWORDS);
       setReports(rep); setEngIssues(eng); setTargets(tar); setUsers(usr);
       sget(PUNCH_KEY).then(pl => setPunches(pl || []));
+      sget(WEEKLY_KEY).then(wl => setWeeklyTargets(wl || []));
       setSupervisors(Object.keys(usr).filter(n => n !== GUEST_USER));
 
       /* Areas + sub-areas: sheet/records, then merge local cache */
@@ -1937,6 +2103,7 @@ function App(){
   const submitReports = async (entries) => { setReports(p => [...entries, ...p]); await sappend(STORAGE_KEY, entries); };
   const deleteReport  = async (id) => { setReports(p => p.filter(r => r.id !== id)); await sdelete(STORAGE_KEY, id); };
   const submitTargets = async (entries) => { setTargets(p => [...entries, ...p]); await sappend(TARGETS_KEY, entries); };
+  const submitWeekly = async (row) => { setWeeklyTargets(p => [row, ...p]); await sappend(WEEKLY_KEY, [row]); };
   const submitEng     = async (entries) => { setEngIssues(p => [...entries, ...p]); await sappend(ENG_KEY, entries); };
   const toggleEng     = async (id) => {
     const issue = engIssues.find(e => e.id === id); if(!issue) return;
@@ -2089,7 +2256,8 @@ function App(){
         )}
         {tab === "target" && (
           <TargetScreen session={session} reports={reports} supervisors={supervisors}
-            areas={areas} roleGroups={roleGroups} onSubmit={submitTargets} showFlash={showFlash} />
+            areas={areas} targets={targets} weeklyTargets={weeklyTargets} roleGroups={roleGroups}
+            onSubmit={submitTargets} onSubmitWeekly={submitWeekly} showFlash={showFlash} />
         )}
         {tab === "engineering" && (
           <EngScreen session={session} engIssues={engIssues}
@@ -2193,3 +2361,7 @@ window.addEventListener("error", function(e){
 });
 window.addEventListener("unhandledrejection", function(e){ console.error("unhandled:", e.reason); });
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+setTimeout(function(){
+  var bs = document.getElementById("boot-splash");
+  if(bs){ bs.style.opacity = "0"; setTimeout(function(){ bs.remove(); }, 400); }
+}, 300);
